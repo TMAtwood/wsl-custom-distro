@@ -1,0 +1,24 @@
+# Ignore non-markdown files that start with #
+.actrc
+wsl-vpnkit.service
+
+# Ignore build artifacts
+*.tar
+*.tar.gz
+*.zip
+
+# Ignore binary/compiled files
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore backup files
+*.backup
+Dockerfile.monolithic.backup
+
+# Ignore logs
+*.log
+
+# Ignore sensitive files
+.secrets.baseline

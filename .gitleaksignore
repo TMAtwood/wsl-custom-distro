@@ -1,0 +1,3 @@
+# Gitleaks ignore file
+# Exclude detect-secrets baseline file (contains hashed secrets, not actual secrets)
+.secrets.baseline

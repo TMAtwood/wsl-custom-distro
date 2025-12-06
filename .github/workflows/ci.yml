@@ -1,0 +1,150 @@
+name: Build and Test Container Image
+
+"on":
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_REGISTRY: localhost/tmatwood
+  IMAGE_NAME: wsl-ubuntu-24.04
+  VERSION: 0.0.0-dev
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for GitVersion
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.x"
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v4.1.0
+        with:
+          versionSpec: "6.x"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v4.1.0
+        with:
+          configFilePath: GitVersion.yml
+
+      - name: Set version from GitVersion
+        if: steps.gitversion.outputs.semVer != ''
+        run: echo "VERSION=${{ steps.gitversion.outputs.semVer }}" >> "$GITHUB_ENV"
+
+      - name: Display GitVersion outputs
+        if: steps.gitversion.conclusion == 'success'
+        run: |
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+          echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+          echo "BranchName: ${{ steps.gitversion.outputs.branchName }}"
+          echo "Effective VERSION: ${VERSION}"
+
+      - name: Set up Docker Buildx
+        if: ${{ !env.ACT }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install container-structure-test
+        run: |
+          curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64
+          chmod +x container-structure-test-linux-amd64
+          sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
+          container-structure-test version
+
+      - name: Build container image
+        env:
+          BUILD_DATE: ${{ steps.gitversion.outputs.commitDate }}
+        run: |
+          echo "Building image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          if [ -n "$ACT" ]; then
+            # When running with act locally, use legacy docker build (disable buildx)
+            DOCKER_BUILDKIT=0 docker build \
+              --build-arg BUILD_DATE="${BUILD_DATE}" \
+              --build-arg VERSION="${VERSION}" \
+              -t "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}" \
+              -t "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
+              .
+          else
+            # On GitHub Actions, use buildx for better caching and multi-platform support
+            docker buildx build \
+              --load \
+              --build-arg BUILD_DATE="${BUILD_DATE}" \
+              --build-arg VERSION="${VERSION}" \
+              -t "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}" \
+              -t "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest" \
+              .
+          fi
+
+      - name: List built images
+        run: docker images | grep ${{ env.IMAGE_NAME }}
+
+      - name: Run container structure tests
+        run: |
+          echo "Testing image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          container-structure-test test \
+            --image "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}" \
+            --config tests.yaml
+          echo "✅ All tests passed!"
+
+      - name: Save image as artifact (optional)
+        if: github.ref == 'refs/heads/main'
+        env:
+          ARTIFACT_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          IMAGE="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${ARTIFACT_VERSION}"
+          docker save "${IMAGE}" | gzip > "${{ env.IMAGE_NAME }}-${ARTIFACT_VERSION}.tar.gz"
+
+      - name: Upload image artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ steps.gitversion.outputs.semVer }}
+          path: ${{ env.IMAGE_NAME }}-*.tar.gz
+          retention-days: 7
+
+      - name: Login to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag images for GHCR
+        if: github.ref == 'refs/heads/main'
+        env:
+          GHCR_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          SRC="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
+          DST="ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}"
+          docker tag "${SRC}:${GHCR_VERSION}" "${DST}:${GHCR_VERSION}"
+          docker tag "${SRC}:latest" "${DST}:latest"
+
+      - name: Push to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
+        env:
+          GHCR_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          echo "Pushing to ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${GHCR_VERSION}"
+          docker push "ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${GHCR_VERSION}"
+          docker push "ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest"
+          echo "✅ Image published to GitHub Container Registry!"
+          echo "📦 Pull with: docker pull ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${GHCR_VERSION}"

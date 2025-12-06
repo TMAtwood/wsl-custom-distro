@@ -1,0 +1,12 @@
+[Unit]
+Description=Make / a shared mount for rootless containers
+DefaultDependencies=no
+After=local-fs.target
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mount --make-rshared /
+
+[Install]
+WantedBy=multi-user.target

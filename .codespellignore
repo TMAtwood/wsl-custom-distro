@@ -1,0 +1,15 @@
+---
+# Codespell ignore list
+# Words that should not be flagged as misspellings
+
+# F# package manager
+paket
+
+# Common false positives
+crate
+te
+ue
+ans
+
+# Variable reference in docs/TROUBLESHOOTING.md
+DistroName

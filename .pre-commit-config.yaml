@@ -1,0 +1,245 @@
+---
+# ==============================================================================
+# CI Configuration
+# ==============================================================================
+ci:
+  autofix_commit_msg: 'style: auto-fix by pre-commit hooks [skip ci]'
+  autoupdate_commit_msg: 'chore: update pre-commit hooks [skip ci]'
+  skip:
+    - dockle
+    - trivy-image
+    - container-structure-test
+    - psscriptanalyzer
+repos:
+  - hooks:
+      - args: [--maxkb=1024]
+        id: check-added-large-files
+      - id: check-ast
+      - id: check-builtin-literals
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-xml
+      - args: [--allow-multiple-documents]
+        id: check-yaml
+      - id: debug-statements
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: forbid-new-submodules
+      - id: forbid-submodules
+      - args: [--fix=lf]
+        id: mixed-line-ending
+      - id: name-tests-test
+      - args: [--branch, main, --branch, develop]
+        id: no-commit-to-branch
+      - id: requirements-txt-fixer
+      - exclude: ^\.pre-commit-config\.yaml$
+        id: sort-simple-yaml
+      - args: [--markdown-linebreak-ext=md]
+        id: trailing-whitespace
+    repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+  - hooks:
+      - args: [--config-file=.yamllint.yaml]
+        files: \.yaml$|\.yml$
+        id: yamllint
+    repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.37.1
+  - hooks:
+      - args: [--config=.markdownlint.yaml, --fix]
+        exclude: ^(\.actrc|wsl-vpnkit\.service|node_modules/)$
+        id: markdownlint
+    repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.46.0
+  - hooks:
+      - args:
+          - '--baseline'
+          - .secrets.baseline
+          - '--exclude-files'
+          - \.git/.*
+          - '--exclude-files'
+          - \.secrets\.baseline$
+        exclude: (package-lock\.json|\.secrets\.baseline)$
+        id: detect-secrets
+    repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+  - hooks:
+      - exclude: \.secrets\.baseline$
+        id: gitleaks
+    repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+  - hooks:
+      - args:
+          - '--only-verified'
+        exclude: \.secrets\.baseline$
+        id: trufflehog
+    repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.91.2
+  - hooks:
+      - entry: ./scripts/pre-commit-hadolint.sh
+        files: Dockerfile
+        id: hadolint
+        language: script
+        name: Hadolint Dockerfile Linter
+        pass_filenames: true
+    repo: local
+  - hooks:
+      - entry: ./scripts/pre-commit-dockle.sh
+        files: Dockerfile
+        id: dockle
+        language: script
+        name: Dockle Container Security Linter
+        pass_filenames: false
+        stages: [pre-push]
+    repo: local
+  - hooks:
+      - entry: ./scripts/pre-commit-trivy-config.sh
+        files: (Dockerfile|docker-compose.*\.ya?ml|\.yaml|\.yml)$
+        id: trivy-config
+        language: script
+        name: Trivy Configuration Scanner
+        pass_filenames: false
+    repo: local
+  - hooks:
+      - entry: ./scripts/pre-commit-trivy-image.sh
+        files: Dockerfile
+        id: trivy-image
+        language: script
+        name: Trivy Container Image Scanner
+        pass_filenames: false
+        stages: [pre-push]
+    repo: local
+  - hooks:
+      - args: [--severity=warning, --external-sources]
+        files: \.(sh|bash)$
+        id: shellcheck
+    repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+  - hooks:
+      - args: [-i, '2', -ci, -bn]
+        files: \.(sh|bash)$
+        id: shfmt
+    repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+  - hooks:
+      - id: actionlint
+    repo: https://github.com/rhysd/actionlint
+    rev: v1.7.9
+  - hooks:
+      - exclude: (package-lock\.json|\.secrets\.baseline)$
+        id: prettier
+        types_or: [json]
+    repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.7.4
+  - hooks:
+      - args: [--fix, --exit-non-zero-on-fix]
+        id: ruff-check
+      - id: ruff-format
+    repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.8
+  - hooks:
+      - args: [-r, --skip=B101, --quiet]
+        files: \.py$
+        id: bandit
+    repo: https://github.com/PyCQA/bandit
+    rev: 1.9.2
+  # - hooks:
+  #     - entry: ./scripts/pre-commit-psscriptanalyzer.sh
+  #       files: \.ps1$
+  #       id: psscriptanalyzer
+  #       language: script
+  #       name: PowerShell Script Analyzer
+  #       pass_filenames: false
+  #   repo: local
+  - hooks:
+      - args:
+          - '--quiet'
+          - '--compact'
+          - '--skip-check=CKV_DOCKER_2,CKV_DOCKER_3,CKV_DOCKER_7'
+        files: (Dockerfile|docker-compose.*\.ya?ml)$
+        id: checkov
+    repo: https://github.com/bridgecrewio/checkov
+    rev: 3.2.495
+  - hooks:
+      - id: commitizen
+        stages: [commit-msg]
+    repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.10.0
+  - hooks:
+      - exclude: (\.git/|\.venv/|node_modules/)
+        id: editorconfig-checker
+    repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+    rev: 3.6.0
+  - hooks:
+      - args:
+          - '--skip=*.git,*.venv,node_modules,*.lock,*.baseline'
+          - '--ignore-words=.codespellignore'
+        id: codespell
+    repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+  - hooks:
+      - entry: ./scripts/pre-commit-container-structure-test.sh
+        files: (tests\.yaml|Dockerfile)$
+        id: container-structure-test
+        language: script
+        name: Container Structure Test
+        pass_filenames: false
+        stages: [pre-push]
+    repo: local
+  - hooks:
+      - args: [--maxkb=5120]
+        id: check-added-large-files
+        name: Ensure no large files in commits
+    repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+  # ============================================================================
+  # GENERAL FILE & CODE QUALITY HOOKS
+  # ============================================================================
+  # YAML LINTING
+  # ============================================================================
+  # MARKDOWN LINTING
+  # ============================================================================
+  # SECRET DETECTION (Multi-layer approach)
+  # ============================================================================
+  # DOCKER / CONTAINER SECURITY & BEST PRACTICES
+  # ============================================================================
+  # SHELL SCRIPT LINTING
+  # ============================================================================
+  # GITHUB ACTIONS LINTING
+  # ============================================================================
+  # JSON LINTING & FORMATTING
+  # ============================================================================
+  # PYTHON LINTING & FORMATTING
+  # ============================================================================
+  # POWERSHELL LINTING
+  # ============================================================================
+  # INFRASTRUCTURE AS CODE LINTING
+  # ============================================================================
+  # COMMIT MESSAGE LINTING
+  # ============================================================================
+  # EDITORCONFIG LINTING
+  # ============================================================================
+  # SPELLING CHECK
+  # ============================================================================
+  # CONTAINER STRUCTURE TESTS
+  # ============================================================================
+  # LARGE FILE CHECK (stricter for commits)
+  # ============================================================================
+  # LICENSE HEADER CHECK (Optional - uncomment if needed)
+  # ============================================================================
+  # - repo: https://github.com/Lucas-C/pre-commit-hooks
+  #   rev: v1.5.5
+  #   hooks:
+  #     - id: insert-license
+  #       files: \.(py|sh|bash)$
+  #       args:
+  #         - --license-filepath
+  #         - LICENSE_HEADER.txt

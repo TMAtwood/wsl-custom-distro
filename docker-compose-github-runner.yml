@@ -1,0 +1,98 @@
+version: "3.8"
+
+# GitHub Actions Runner for WSL2/Local Development
+#
+# This docker-compose file runs a GitHub Actions self-hosted runner locally
+# for testing workflows before pushing to GitHub.
+#
+# Quick Start:
+#   1. Copy .env.github-runner.example to .env.github-runner
+#   2. Add your GITHUB_PAT token
+#   3. docker-compose -f docker-compose-github-runner.yml up -d
+#
+# For local testing without persistent runner, use act instead:
+#   act push --job build-and-test
+#
+# See docs/GITHUB_RUNNER_REVIEW.md for detailed documentation
+
+services:
+  github-runner:
+    # Use your custom WSL2 image for consistency with development environment
+    # Falls back to standard image if custom image not available
+    image: ${RUNNER_IMAGE:-localhost/tmatwood/ubuntu-24.04:latest}
+    container_name: github-runner-local-dev
+
+    environment:
+      # Repository configuration
+      REPO_URL: ${GITHUB_REPO_URL:-https://github.com/TMAtwood/wsl-custom-distro}
+
+      # Authentication: Use Personal Access Token (recommended)
+      # Get token at: https://github.com/settings/tokens (scopes: repo, workflow)
+      ACCESS_TOKEN: ${GITHUB_PAT}
+
+      # Alternative: Registration token (expires in 1 hour, use for temporary runners)
+      # Get at: https://github.com/{owner}/{repo}/settings/actions/runners/new
+      # RUNNER_TOKEN: ${GITHUB_RUNNER_TOKEN}
+
+      # Runner identification and configuration
+      RUNNER_NAME: ${RUNNER_NAME:-local-dev-runner}
+      RUNNER_WORKDIR: /tmp/runner/work
+      RUNNER_GROUP: default
+
+      # Labels for filtering jobs - add 'self-hosted' and 'local' to your workflow
+      LABELS: ${RUNNER_LABELS:-local,development,self-hosted}
+
+      # Podman/Docker configuration for container builds within the runner
+      DOCKER_ENABLED: true
+      # Use Podman socket for WSL2 (rootless Podman at /run/user/1001/podman/podman.sock)
+      DOCKER_HOST: unix:///run/user/1001/podman/podman.sock
+
+      # Ephemeral mode: Clean state for each job (recommended for local development)
+      # Prevents disk bloat and ensures clean test environment
+      EPHEMERAL: ${EPHEMERAL:-true}
+
+    volumes:
+      # Mount Podman socket for container builds (WSL2 rootless Podman)
+      # Path format: /run/user/{UID}/podman/podman.sock (UID 1001 for 'dev' user)
+      - /run/user/1001/podman/podman.sock:/run/user/1001/podman/podman.sock
+
+      # Persistent work directory (survives container restarts)
+      # Store in user's home directory for easier access
+      - ${HOME}/.local/share/github-runner/work:/tmp/runner/work
+
+      # Build cache directory (optional, can be cleared to free space)
+      - ${HOME}/.local/share/github-runner/cache:/tmp/runner/cache
+
+    # Restart policy for production-like behavior
+    restart: unless-stopped
+
+    # Resource limits optimized for laptop development
+    # Adjust cpus and memory based on your machine's specs
+    # Rule of thumb: Leave 1 CPU and 2GB RAM for the host
+    deploy:
+      resources:
+        limits:
+          # Maximum resources the runner can consume
+          cpus: ${RUNNER_CPU_LIMIT:-"2.0"}
+          memory: ${RUNNER_MEMORY_LIMIT:-"4G"}
+        reservations:
+          # Guaranteed minimum resources
+          cpus: ${RUNNER_CPU_MIN:-"1.0"}
+          memory: ${RUNNER_MEMORY_MIN:-"2G"}
+
+    # Privileged mode required for Docker-in-Docker
+    # ⚠️  Security Warning: This grants the container extensive host access
+    #     Use only in trusted development environments
+    privileged: true
+
+    # Security options - required for container builds
+    # ⚠️  WARNING: These disable significant security restrictions
+    #     Only appropriate for isolated development machines
+    security_opt:
+      - apparmor:unconfined
+      - seccomp:unconfined
+
+    # Optional: Show runner startup logs
+    # Uncomment to see detailed initialization
+    # stdin_open: true
+    # tty: true

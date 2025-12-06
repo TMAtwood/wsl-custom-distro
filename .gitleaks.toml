@@ -1,0 +1,16 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+title = "Gitleaks configuration for wsl-ubuntu-24.04"
+
+[extend]
+# Use the default gitleaks config as a base
+useDefault = true
+
+# Allowlist specific files that contain false positives
+[allowlist]
+  description = "Allowlisted files and patterns"
+  paths = [
+    '''.secrets.baseline''',
+    '''\.gitleaksignore''',
+  ]

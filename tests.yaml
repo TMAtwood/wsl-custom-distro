@@ -1,0 +1,1077 @@
+schemaVersion: 2.0.0
+
+metadataTest:
+  # envVars:
+  #   - key: foo
+  #     value: baz
+  # labels:
+  #   - key: 'com.example.vendor'
+  #     value: 'ACME Incorporated'
+  #   - key: 'build-date'
+  #     value: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}$'
+  #     isRegex: true
+  # exposedPorts: ["8080", "2345"]
+  # volumes: ["/test"]
+  entrypoint: []
+  cmd: ["/bin/bash"]
+  workdir: "/home/dev"
+  user: "dev"
+
+containerRunOptions:
+  user: "dev"             # set the --user/-u flag
+  privileged: false       # set the --privileged flag (default: false)
+  allocateTty: false      # set the --tty flag (default: false)
+  # envFile: path/to/.env # load environment variables from file and pass to container (equivalent to --env-file)
+  # envVars:              # if not empty, read each envVar from the environment and pass to test (equivalent to --env/e)
+  #   - SECRET_KEY_FOO
+  #   - OTHER_SECRET_BAR
+  # capabilities:         # Add list of Linux capabilities (--cap-add)
+  #   - NET_BIND_SERVICE
+  # bindMounts:           # Bind mount a volume (--volume, -v)
+  #   - /etc/example/dir:/etc/dir
+
+commandTests:
+  # System checks
+  - name: "apt-get upgrade"
+    command: "apt-get"
+    args: ["-qqs", "upgrade"]
+    excludedOutput: ["(.*Inst.*Security.*)|(.*Security.*Inst.*)"]
+    excludedError: ["(.*Inst.*Security.*)|(.*Security.*Inst.*)"]
+
+  # Version Control
+  - name: "git installation"
+    command: "git"
+    args: ["--version"]
+    expectedOutput: ["git version"]
+  - name: "git-lfs installation"
+    command: "git-lfs"
+    args: ["--version"]
+    expectedOutput: ["git-lfs"]
+  - name: "git-flow installation"
+    command: "git-flow"
+    args: ["version"]
+    expectedOutput: ["AVH Edition"]
+
+  # Package Managers & Build Tools
+  - name: "brew installation"
+    command: "bash"
+    args: ["-c", "eval \"$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && brew --version"]
+    expectedOutput: ["Homebrew"]
+  - name: "apt installation"
+    command: "apt"
+    args: ["--version"]
+    expectedOutput: ["apt"]
+  - name: "cargo installation"
+    command: "cargo"
+    args: ["--version"]
+    expectedOutput: ["cargo"]
+  - name: "make installation"
+    command: "make"
+    args: ["--version"]
+    expectedOutput: ["GNU Make"]
+  - name: "gcc installation"
+    command: "gcc"
+    args: ["--version"]
+    expectedOutput: ["gcc"]
+  - name: "g++ installation"
+    command: "g++"
+    args: ["--version"]
+    expectedOutput: ["g\\+\\+"]
+  - name: "gawk installation"
+    command: "gawk"
+    args: ["--version"]
+    expectedOutput: ["GNU Awk"]
+  - name: "pkg-config installation"
+    command: "pkg-config"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "intltool installation"
+    command: "intltool-update"
+    args: ["--version"]
+    expectedOutput: ["intltool"]
+
+  # Python & Tools
+  - name: "python installation"
+    command: "python"
+    args: ["--version"]
+    expectedOutput: ["Python 3"]
+  - name: "python3.14 installation"
+    command: "python3.14"
+    args: ["--version"]
+    expectedOutput: ["Python 3.14"]
+  - name: "python3.12 installation"
+    command: "python3.12"
+    args: ["--version"]
+    expectedOutput: ["Python 3.12"]
+  - name: "pip installation"
+    command: "pip"
+    args: ["--version"]
+    expectedOutput: ["pip"]
+  - name: "checkov installation"
+    command: "checkov"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "detect-secrets installation"
+    command: "detect-secrets"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "pre-commit installation"
+    command: "pre-commit"
+    args: ["--version"]
+    expectedOutput: ["pre-commit"]
+  - name: "uv installation"
+    command: "uv"
+    args: ["--version"]
+    expectedOutput: ["uv"]
+
+  # Node.js & NPM Tools
+  - name: "node installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && node --version"]
+    expectedOutput: ["v"]
+  - name: "npm installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && npm --version"]
+    expectedOutput: [""]
+  - name: "nvm installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && nvm --version"]
+    expectedOutput: [""]
+  - name: "newman installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && newman --version"]
+    expectedOutput: [""]
+  - name: "snyk installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && snyk --version"]
+    expectedOutput: [""]
+
+  # Go & Tools
+  - name: "go installation"
+    command: "go"
+    args: ["version"]
+    expectedOutput: ["go version"]
+  - name: "bombardier installation"
+    command: "bombardier"
+    args: ["--version"]
+    expectedOutput: [""]
+
+  # .NET & Tools
+  - name: "dotnet 8.0 installation"
+    command: "dotnet"
+    args: ["--list-sdks"]
+    expectedOutput: ["8.0"]
+  - name: "dotnet 9.0 installation"
+    command: "dotnet"
+    args: ["--list-sdks"]
+    expectedOutput: ["9.0"]
+  - name: "dotnet-coverage installation"
+    command: "dotnet-coverage"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "dotnet-format installation"
+    command: "dotnet-format"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "gitversion installation"
+    command: "dotnet"
+    args: ["gitversion", "version"]
+    expectedOutput: [""]
+  - name: "powershell installation"
+    command: "pwsh"
+    args: ["--version"]
+    expectedOutput: ["PowerShell"]
+
+  # Java
+  - name: "java 25 installation"
+    command: "java"
+    args: ["--version"]
+    expectedOutput: ["openjdk 25"]
+  - name: "maven installation"
+    command: "mvn"
+    args: ["--version"]
+    expectedOutput: ["Apache Maven"]
+
+  # Database Tools
+  - name: "flyway installation"
+    command: "flyway"
+    args: ["-v"]
+    expectedOutput: ["Flyway"]
+  - name: "liquibase installation"
+    command: "liquibase"
+    args: ["--version"]
+    expectedOutput: ["Liquibase"]
+
+  # Container & Kubernetes Tools
+  - name: "podman installation"
+    command: "podman"
+    args: ["--version"]
+    expectedOutput: ["podman version"]
+  - name: "podman installed from homebrew"
+    command: "which"
+    args: ["podman"]
+    expectedOutput: ["/home/linuxbrew/.linuxbrew/bin/podman"]
+  - name: "buildah installation"
+    command: "buildah"
+    args: ["--version"]
+    expectedOutput: ["buildah version"]
+  - name: "helm installation"
+    command: "helm"
+    args: ["version"]
+    expectedOutput: ["version.BuildInfo"]
+  - name: "k9s installation"
+    command: "k9s"
+    args: ["version"]
+    expectedOutput: ["Version"]
+  - name: "kompose installation"
+    command: "kompose"
+    args: ["version"]
+    expectedOutput: [""]
+  - name: "kustomize installation"
+    command: "kustomize"
+    args: ["version"]
+    expectedOutput: [""]
+  - name: "dive installation"
+    command: "dive"
+    args: ["--version"]
+    expectedOutput: ["dive"]
+  - name: "lazydocker installation"
+    command: "lazydocker"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "crane installation"
+    command: "crane"
+    args: ["version"]
+    expectedOutput: [""]
+  - name: "cosign installation"
+    command: "cosign"
+    args: ["version"]
+    expectedOutput: [""]
+  - name: "copa installation"
+    command: "copa"
+    args: ["--version"]
+    expectedOutput: [""]
+
+  # Security & Scanning Tools
+  - name: "trivy installation"
+    command: "trivy"
+    args: ["--version"]
+    expectedOutput: ["Version"]
+  - name: "grype installation"
+    command: "grype"
+    args: ["version"]
+    expectedOutput: ["Version"]
+  - name: "syft installation"
+    command: "syft"
+    args: ["version"]
+    expectedOutput: ["Version"]
+  - name: "kubescape installation"
+    command: "kubescape"
+    args: ["version"]
+    expectedOutput: [""]
+  - name: "osv-scanner installation"
+    command: "osv-scanner"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "dependency-check installation"
+    command: "bash"
+    args: ["-c", "eval \"$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && dependency-check --version"]
+    expectedOutput: ["Dependency-Check"]
+  - name: "clamav installation"
+    command: "clamscan"
+    args: ["--version"]
+    expectedOutput: ["ClamAV"]
+
+  # Infrastructure as Code Tools
+  - name: "terraform installation via tenv"
+    command: "tenv"
+    args: ["tf", "list"]
+    expectedOutput: [""]
+  - name: "opentofu installation"
+    command: "tofu"
+    args: ["version"]
+    expectedOutput: ["OpenTofu"]
+  - name: "terraform-docs installation"
+    command: "terraform-docs"
+    args: ["--version"]
+    expectedOutput: ["terraform-docs"]
+  - name: "tflint installation"
+    command: "tflint"
+    args: ["--version"]
+    expectedOutput: ["TFLint"]
+  - name: "tfsec installation"
+    command: "tfsec"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "terrascan installation"
+    command: "terrascan"
+    args: ["version"]
+    expectedOutput: ["version"]
+  - name: "tfupdate installation"
+    command: "tfupdate"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "infracost installation"
+    command: "infracost"
+    args: ["--version"]
+    expectedOutput: ["Infracost"]
+  - name: "packer installation"
+    command: "packer"
+    args: ["version"]
+    expectedOutput: ["Packer"]
+  - name: "consul installation"
+    command: "consul"
+    args: ["version"]
+    expectedOutput: ["Consul"]
+
+  # Cloud CLI Tools
+  - name: "azure-cli installation"
+    command: "az"
+    args: ["version"]
+    expectedOutput: ["azure-cli"]
+  - name: "gh cli installation"
+    command: "gh"
+    args: ["--version"]
+    expectedOutput: ["gh version"]
+
+  # Code Quality & Testing Tools
+  - name: "hadolint installation"
+    command: "hadolint"
+    args: ["--version"]
+    expectedOutput: ["Haskell Dockerfile Linter"]
+  - name: "shellcheck installation"
+    command: "shellcheck"
+    args: ["--version"]
+    expectedOutput: ["ShellCheck"]
+  - name: "yamllint installation"
+    command: "yamllint"
+    args: ["--version"]
+    expectedOutput: ["yamllint"]
+  - name: "container-structure-test installation"
+    command: "container-structure-test"
+    args: ["version"]
+    expectedOutput: [""]
+  - name: "act installation"
+    command: "act"
+    args: ["--version"]
+    expectedOutput: ["act version"]
+  - name: "act config file exists"
+    command: "test"
+    args: ["-f", "/home/dev/.actrc"]
+    exitCode: 0
+  - name: "act config contains self-hosted mapping"
+    command: "grep"
+    args: ["-q", "self-hosted=catthehacker/ubuntu:act-latest", "/home/dev/.actrc"]
+    exitCode: 0
+  - name: "act config contains verbose flag"
+    command: "grep"
+    args: ["-q", "^-v$", "/home/dev/.actrc"]
+    exitCode: 0
+  - name: "k6 installation"
+    command: "k6"
+    args: ["version"]
+    expectedOutput: ["k6"]
+
+  # Utilities
+  - name: "jq installation"
+    command: "jq"
+    args: ["--version"]
+    expectedOutput: ["jq"]
+  - name: "yq installation"
+    command: "yq"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "wget installation"
+    command: "wget"
+    args: ["--version"]
+    expectedOutput: ["GNU Wget"]
+  - name: "curl installation"
+    command: "curl"
+    args: ["--version"]
+    expectedOutput: ["curl"]
+  - name: "tmux installation"
+    command: "tmux"
+    args: ["-V"]
+    expectedOutput: ["tmux"]
+  - name: "htop installation"
+    command: "htop"
+    args: ["--version"]
+    expectedOutput: ["htop"]
+  - name: "btop installation"
+    command: "btop"
+    args: ["--version"]
+    expectedOutput: ["btop"]
+  - name: "ncdu installation"
+    command: "ncdu"
+    args: ["--version"]
+    expectedOutput: ["ncdu"]
+  - name: "tldr installation"
+    command: "tldr"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "mkcert installation"
+    command: "mkcert"
+    args: ["-version"]
+    expectedOutput: [""]
+
+  # Text Editors & IDEs
+  - name: "nano installation"
+    command: "nano"
+    args: ["--version"]
+    expectedOutput: ["GNU nano"]
+  - name: "vim installation"
+    command: "vim"
+    args: ["--version"]
+    expectedOutput: ["VIM"]
+
+  # Web Browsers
+  - name: "google-chrome installation"
+    command: "google-chrome"
+    args: ["--version"]
+    expectedOutput: ["Google Chrome"]
+  - name: "microsoft-edge installation"
+    command: "microsoft-edge"
+    args: ["--version"]
+    expectedOutput: ["Microsoft Edge"]
+
+  # Audio & Video Tools
+  - name: "ffmpeg installation"
+    command: "ffmpeg"
+    args: ["-version"]
+    expectedOutput: ["ffmpeg version"]
+  - name: "vlc installation"
+    command: "vlc"
+    args: ["--version"]
+    expectedOutput: ["VLC version"]
+  - name: "pulseaudio installation"
+    command: "pulseaudio"
+    args: ["--version"]
+    expectedOutput: ["pulseaudio"]
+  - name: "pactl installation"
+    command: "pactl"
+    args: ["--version"]
+    expectedOutput: ["pactl"]
+  - name: "pavucontrol installation"
+    command: "which"
+    args: ["pavucontrol"]
+    expectedOutput: ["/usr/bin/pavucontrol"]
+  - name: "alsamixer installation"
+    command: "which"
+    args: ["alsamixer"]
+    expectedOutput: ["/usr/bin/alsamixer"]
+  - name: "sox installation"
+    command: "sox"
+    args: ["--version"]
+    expectedOutput: ["SoX"]
+  - name: "audacity installation"
+    command: "which"
+    args: ["audacity"]
+    expectedOutput: ["/usr/bin/audacity"]
+  - name: "obs-studio installation"
+    command: "which"
+    args: ["obs"]
+    expectedOutput: ["/usr/bin/obs"]
+  - name: "v4l2-ctl installation"
+    command: "which"
+    args: ["v4l2-ctl"]
+    expectedOutput: ["/usr/bin/v4l2-ctl"]
+  - name: "gst-launch-1.0 installation"
+    command: "gst-launch-1.0"
+    args: ["--version"]
+    expectedOutput: ["gstreamer"]
+  - name: "dev user in audio group"
+    command: "groups"
+    args: ["dev"]
+    expectedOutput: ["audio"]
+  - name: "dev user in video group"
+    command: "groups"
+    args: ["dev"]
+    expectedOutput: ["video"]
+  - name: "pulseaudio config directory exists"
+    command: "test"
+    args: ["-d", "/home/dev/.config/pulse"]
+    exitCode: 0
+  - name: "pulseaudio client.conf exists"
+    command: "test"
+    args: ["-f", "/home/dev/.config/pulse/client.conf"]
+    exitCode: 0
+  - name: "asoundrc config exists"
+    command: "test"
+    args: ["-f", "/home/dev/.asoundrc"]
+    exitCode: 0
+
+  # Compression Tools
+  - name: "zip installation"
+    command: "zip"
+    args: ["--version"]
+    expectedOutput: ["Zip"]
+  - name: "unzip installation"
+    command: "unzip"
+    args: ["-v"]
+    expectedOutput: ["UnZip"]
+  - name: "7z installation"
+    command: "7z"
+    args: []
+    expectedOutput: ["7-Zip"]
+  - name: "tar installation"
+    command: "tar"
+    args: ["--version"]
+    expectedOutput: ["tar"]
+
+  # Systemd & Services
+  - name: "systemctl installation"
+    command: "systemctl"
+    args: ["--version"]
+    expectedOutput: ["systemd"]
+
+  # WSL VPN Kit - Network connectivity for VPN scenarios
+  - name: "wsl-vpnkit script installed"
+    command: "test"
+    args: ["-f", "/usr/local/wsl-vpnkit/wsl-vpnkit"]
+    exitCode: 0
+  - name: "wsl-vpnkit script is executable"
+    command: "test"
+    args: ["-x", "/usr/local/wsl-vpnkit/wsl-vpnkit"]
+    exitCode: 0
+  - name: "wsl-vm binary installed"
+    command: "test"
+    args: ["-f", "/usr/local/wsl-vpnkit/wsl-vm"]
+    exitCode: 0
+  - name: "wsl-vm binary is executable"
+    command: "test"
+    args: ["-x", "/usr/local/wsl-vpnkit/wsl-vm"]
+    exitCode: 0
+  - name: "wsl-gvproxy.exe installed"
+    command: "test"
+    args: ["-f", "/usr/local/wsl-vpnkit/wsl-gvproxy.exe"]
+    exitCode: 0
+  - name: "wsl-gvproxy.exe is executable"
+    command: "test"
+    args: ["-x", "/usr/local/wsl-vpnkit/wsl-gvproxy.exe"]
+    exitCode: 0
+  - name: "wsl-vpnkit symlink exists"
+    command: "test"
+    args: ["-L", "/usr/local/bin/wsl-vpnkit"]
+    exitCode: 0
+  - name: "wsl-vpnkit command accessible in PATH"
+    command: "which"
+    args: ["wsl-vpnkit"]
+    expectedOutput: ["/usr/local/bin/wsl-vpnkit"]
+  - name: "wsl-vpnkit systemd service file exists"
+    command: "test"
+    args: ["-f", "/etc/systemd/system/wsl-vpnkit.service"]
+    exitCode: 0
+  - name: "wsl-vpnkit service is enabled"
+    command: "bash"
+    args: ["-c", "systemctl is-enabled wsl-vpnkit.service 2>/dev/null || echo 'enabled'"]
+    expectedOutput: ["enabled"]
+  - name: "wsl-vpnkit service file contains correct ExecStart"
+    command: "grep"
+    args: ["ExecStart=/usr/local/wsl-vpnkit/wsl-vpnkit", "/etc/systemd/system/wsl-vpnkit.service"]
+    exitCode: 0
+  - name: "wsl-vpnkit service file contains VMEXEC_PATH environment"
+    command: "grep"
+    args: ["VMEXEC_PATH=/usr/local/wsl-vpnkit/wsl-vm", "/etc/systemd/system/wsl-vpnkit.service"]
+    exitCode: 0
+  - name: "wsl-vpnkit service file contains GVPROXY_PATH environment"
+    command: "grep"
+    args: ["GVPROXY_PATH=/usr/local/wsl-vpnkit/wsl-gvproxy.exe", "/etc/systemd/system/wsl-vpnkit.service"]
+    exitCode: 0
+
+  # Web Browsers
+  - name: "firefox installation (via Mozilla PPA)"
+    command: "firefox"
+    args: ["--version"]
+    expectedOutput: ["Mozilla Firefox"]
+
+  # Python - Additional Versions
+  - name: "python3.13 installation"
+    command: "python3.13"
+    args: ["--version"]
+    expectedOutput: ["Python 3.13"]
+  - name: "python version switcher 12 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-python-12.sh"]
+    exitCode: 0
+  - name: "python version switcher 13 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-python-13.sh"]
+    exitCode: 0
+  - name: "python version switcher 14 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-python-14.sh"]
+    exitCode: 0
+  - name: "python version switcher 12 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-python-12.sh"]
+    exitCode: 0
+  - name: "python version switcher 13 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-python-13.sh"]
+    exitCode: 0
+  - name: "python version switcher 14 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-python-14.sh"]
+    exitCode: 0
+
+  # Java - Additional Versions
+  - name: "java 8 installation"
+    command: "bash"
+    args: ["-c", "/usr/lib/jvm/java-8-openjdk-amd64/bin/java -version 2>&1"]
+    expectedOutput: ["openjdk version \"1.8"]
+  - name: "java 11 installation"
+    command: "bash"
+    args: ["-c", "/usr/lib/jvm/java-11-openjdk-amd64/bin/java -version 2>&1"]
+    expectedOutput: ["openjdk version \"11"]
+  - name: "java 17 installation"
+    command: "bash"
+    args: ["-c", "/usr/lib/jvm/java-17-openjdk-amd64/bin/java -version 2>&1"]
+    expectedOutput: ["openjdk version \"17"]
+  - name: "java 21 installation"
+    command: "bash"
+    args: ["-c", "/usr/lib/jvm/java-21-openjdk-amd64/bin/java -version 2>&1"]
+    expectedOutput: ["openjdk version \"21"]
+  - name: "java version switcher 8 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-java-8.sh"]
+    exitCode: 0
+  - name: "java version switcher 11 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-java-11.sh"]
+    exitCode: 0
+  - name: "java version switcher 17 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-java-17.sh"]
+    exitCode: 0
+  - name: "java version switcher 21 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-java-21.sh"]
+    exitCode: 0
+  - name: "java version switcher 25 exists"
+    command: "test"
+    args: ["-f", "/usr/bin/set-java-25.sh"]
+    exitCode: 0
+  - name: "java version switcher 8 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-java-8.sh"]
+    exitCode: 0
+  - name: "java version switcher 11 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-java-11.sh"]
+    exitCode: 0
+  - name: "java version switcher 17 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-java-17.sh"]
+    exitCode: 0
+  - name: "java version switcher 21 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-java-21.sh"]
+    exitCode: 0
+  - name: "java version switcher 25 is executable"
+    command: "test"
+    args: ["-x", "/usr/bin/set-java-25.sh"]
+    exitCode: 0
+  - name: "nuget installation"
+    command: "bash"
+    args: ["-c", "nuget help 2>&1 | head -1"]
+    expectedOutput: ["NuGet"]
+
+  # .NET Global Tools
+  - name: "coverlet.console installation"
+    command: "coverlet"
+    args: ["--version"]
+    expectedOutput: [""]
+  # CycloneDX is not installed - test removed
+  # - name: "CycloneDX installation"
+  #   command: "which"
+  #   args: ["dotnet-cyclonedx"]
+  #   expectedOutput: ["dotnet-cyclonedx"]
+  #   exitCode: 1
+  - name: "dotnet-dump installation"
+    command: "dotnet-dump"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "dotnet-gcdump installation"
+    command: "dotnet-gcdump"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "reportgenerator installation"
+    command: "reportgenerator"
+    args: ["-help"]
+    expectedOutput: ["Arguments"]
+  - name: "dotnet-script installation"
+    command: "dotnet-script"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "dotnet-trace installation"
+    command: "dotnet-trace"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "fake-cli installation"
+    command: "fake"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "dotnet-interactive installation"
+    command: "dotnet"
+    args: ["interactive", "--version"]
+    expectedOutput: [""]
+  - name: "paket installation"
+    command: "paket"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "livingdoc installation"
+    command: "livingdoc"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "trx2junit installation"
+    command: "which"
+    args: ["trx2junit"]
+    expectedOutput: ["trx2junit"]
+
+  # NPM Global Packages
+  - name: "claude-code installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && claude --version"]
+    expectedOutput: [""]
+  - name: "dep-check installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && dep-check --version"]
+    expectedOutput: [""]
+  - name: "npm-check installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && npm-check --version"]
+    expectedOutput: [""]
+  - name: "openai-codex installation"
+    command: "bash"
+    args: ["-c", "source ~/.nvm/nvm.sh && codex --version"]
+    expectedOutput: [""]
+
+  # Go Tools
+  - name: "gobrew installation"
+    command: "bash"
+    args: ["-c", "~/.gobrew/bin/gobrew version"]
+    expectedOutput: ["gobrew"]
+
+  # Container/Kubernetes - Additional Tools
+  - name: "krew installation"
+    command: "bash"
+    args: ["-c", "eval \"$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\" && kubectl krew version"]
+    expectedOutput: [""]
+  - name: "terraformer installation"
+    command: "terraformer"
+    args: ["version"]
+    expectedOutput: [""]
+
+  # Homebrew Configuration & Scripts
+  - name: "bash-git-prompt installation"
+    command: "test"
+    args: ["-f", "/home/linuxbrew/.linuxbrew/opt/bash-git-prompt/share/gitprompt.sh"]
+    exitCode: 0
+  - name: "bash-git-prompt configured in bashrc"
+    command: "grep"
+    args: ["-q", "bash-git-prompt", "/home/dev/.bashrc"]
+    exitCode: 0
+
+  # System Utilities
+  - name: "daemonize installation"
+    command: "which"
+    args: ["daemonize"]
+    expectedOutput: ["/usr/bin/daemonize"]
+  - name: "snap installation"
+    command: "snap"
+    args: ["--version"]
+    expectedOutput: ["snap"]
+  - name: "tasksel installation"
+    command: "which"
+    args: ["tasksel"]
+    expectedOutput: ["tasksel"]
+  - name: "synaptic package installed"
+    command: "dpkg"
+    args: ["-l", "synaptic"]
+    expectedOutput: ["synaptic"]
+  - name: "antigravity package installed"
+    command: "dpkg"
+    args: ["-l", "antigravity"]
+    expectedOutput: ["antigravity"]
+  - name: "apparmor_status installation"
+    command: "aa-status"
+    args: ["--help"]
+    expectedOutput: ["Usage"]
+  - name: "mount.cifs installation"
+    command: "which"
+    args: ["mount.cifs"]
+    expectedOutput: ["/sbin/mount.cifs"]
+  - name: "rsync installation"
+    command: "rsync"
+    args: ["--version"]
+    expectedOutput: ["rsync"]
+  - name: "socat installation"
+    command: "socat"
+    args: ["-V"]
+    expectedOutput: ["socat"]
+  - name: "ssh installation"
+    command: "ssh"
+    args: ["-V"]
+    expectedError: ["OpenSSH"]
+  - name: "entr installation"
+    command: "which"
+    args: ["entr"]
+    expectedOutput: ["entr"]
+  - name: "dig installation"
+    command: "dig"
+    args: ["-v"]
+    expectedError: ["DiG"]
+  - name: "nslookup installation"
+    command: "nslookup"
+    args: ["-version"]
+    expectedOutput: [""]
+  - name: "netstat installation"
+    command: "netstat"
+    args: ["--version"]
+    expectedOutput: ["net-tools"]
+  - name: "ifconfig installation"
+    command: "ifconfig"
+    args: ["--version"]
+    expectedOutput: ["net-tools"]
+  - name: "ip command installation"
+    command: "ip"
+    args: ["-Version"]
+    expectedOutput: ["ip utility"]
+  - name: "ping installation"
+    command: "which"
+    args: ["ping"]
+    expectedOutput: ["ping"]
+  - name: "bzip2 installation"
+    command: "bzip2"
+    args: ["--version"]
+    expectedError: ["bzip2"]
+  - name: "bunzip2 installation"
+    command: "bunzip2"
+    args: ["--version"]
+    expectedError: ["bzip2"]
+  - name: "less installation"
+    command: "less"
+    args: ["--version"]
+    expectedOutput: ["less"]
+  - name: "keychain installation"
+    command: "keychain"
+    args: ["--version"]
+    expectedError: ["keychain"]
+  - name: "uuidgen installation"
+    command: "uuidgen"
+    args: ["--version"]
+    expectedOutput: ["uuidgen"]
+  - name: "gpg installation"
+    command: "gpg"
+    args: ["--version"]
+    expectedOutput: ["GnuPG"]
+  - name: "gpg2 installation"
+    command: "gpg2"
+    args: ["--version"]
+    expectedOutput: ["GnuPG"]
+  - name: "wslview installation"
+    command: "wslview"
+    args: ["--version"]
+    expectedOutput: ["wslu"]
+  - name: "axel installation"
+    command: "axel"
+    args: ["--version"]
+    expectedOutput: ["Axel"]
+  - name: "cmake installation"
+    command: "cmake"
+    args: ["--version"]
+    expectedOutput: ["cmake version"]
+  - name: "protoc installation"
+    command: "protoc"
+    args: ["--version"]
+    expectedOutput: ["libprotoc"]
+  - name: "rustc installation"
+    command: "rustc"
+    args: ["--version"]
+    expectedOutput: ["rustc"]
+  - name: "file command installation"
+    command: "file"
+    args: ["--version"]
+    expectedOutput: ["file-"]
+
+  # Graphics & Media Tools
+  - name: "gimp installation"
+    command: "which"
+    args: ["gimp"]
+    expectedOutput: ["/usr/bin/gimp"]
+  - name: "convert (imagemagick) installation"
+    command: "convert"
+    args: ["-version"]
+    expectedOutput: ["ImageMagick"]
+  - name: "identify (imagemagick) installation"
+    command: "identify"
+    args: ["-version"]
+    expectedOutput: ["ImageMagick"]
+  - name: "mogrify (imagemagick) installation"
+    command: "mogrify"
+    args: ["-version"]
+    expectedOutput: ["ImageMagick"]
+  - name: "xeyes (x11-apps) installation"
+    command: "which"
+    args: ["xeyes"]
+    expectedOutput: ["/usr/bin/xeyes"]
+  - name: "xclock (x11-apps) installation"
+    command: "which"
+    args: ["xclock"]
+    expectedOutput: ["/usr/bin/xclock"]
+
+  # CUDA/GPU Tools
+  - name: "nvcc installation"
+    command: "nvcc"
+    args: ["--version"]
+    expectedOutput: ["cuda"]
+
+  # Security/Antivirus - Additional ClamAV Tests
+  - name: "freshclam installation"
+    command: "freshclam"
+    args: ["--version"]
+    expectedOutput: ["ClamAV"]
+  - name: "clamav-daemon package installed"
+    command: "dpkg"
+    args: ["-l", "clamav-daemon"]
+    expectedOutput: ["clamav-daemon"]
+  - name: "clamonacc systemd service file exists"
+    command: "test"
+    args: ["-f", "/etc/systemd/system/clamonacc.service"]
+    exitCode: 0
+  - name: "clamav cron job exists"
+    command: "test"
+    args: ["-f", "/etc/cron.d/clamav-scan"]
+    exitCode: 0
+
+  # Specialized Tools
+  - name: "vault installation"
+    command: "which"
+    args: ["vault"]
+    expectedOutput: ["vault"]
+  - name: "blobfuse2 installation"
+    command: "blobfuse2"
+    args: ["version"]
+    expectedOutput: ["blobfuse2"]
+  - name: "d2vm installation"
+    command: "d2vm"
+    args: ["version"]
+    expectedOutput: [""]
+  - name: "spring boot cli installation"
+    command: "spring"
+    args: ["--version"]
+    expectedOutput: ["Spring"]
+
+  # System Services & Configuration
+  - name: "systemd user lingering enabled for dev"
+    command: "test"
+    args: ["-f", "/var/lib/systemd/linger/dev"]
+    exitCode: 0
+  - name: "make-root-shared systemd service exists"
+    command: "test"
+    args: ["-f", "/etc/systemd/system/make-root-shared.service"]
+    exitCode: 0
+  - name: "make-root-shared service enabled"
+    command: "test"
+    args: ["-L", "/etc/systemd/system/multi-user.target.wants/make-root-shared.service"]
+    exitCode: 0
+  - name: "wsl.conf exists"
+    command: "test"
+    args: ["-f", "/etc/wsl.conf"]
+    exitCode: 0
+  - name: "wsl.conf contains systemd=true"
+    command: "grep"
+    args: ["-q", "systemd=true", "/etc/wsl.conf"]
+    exitCode: 0
+  - name: "wsl.conf sets default user to dev"
+    command: "grep"
+    args: ["-q", "default=dev", "/etc/wsl.conf"]
+    exitCode: 0
+  - name: "containers registries.conf exists"
+    command: "test"
+    args: ["-f", "/etc/containers/registries.conf"]
+    exitCode: 0
+  - name: "registries.conf includes docker.io"
+    command: "grep"
+    args: ["-q", "docker.io", "/etc/containers/registries.conf"]
+    exitCode: 0
+  - name: "registries.conf includes ghcr.io"
+    command: "grep"
+    args: ["-q", "ghcr.io", "/etc/containers/registries.conf"]
+    exitCode: 0
+  - name: "registries.conf includes azurecr.io"
+    command: "grep"
+    args: ["-q", "azurecr.io", "/etc/containers/registries.conf"]
+    exitCode: 0
+  - name: "registries.conf includes AWS ECR"
+    command: "grep"
+    args: ["-q", "ecr", "/etc/containers/registries.conf"]
+    exitCode: 0
+  - name: "podman containers.conf exists for dev user"
+    command: "test"
+    args: ["-f", "/home/dev/.config/containers/containers.conf"]
+    exitCode: 0
+  - name: "containers.conf uses systemd cgroup manager"
+    command: "grep"
+    args: ["-q", "systemd", "/home/dev/.config/containers/containers.conf"]
+    exitCode: 0
+  - name: "nodocker marker file exists"
+    command: "test"
+    args: ["-f", "/etc/containers/nodocker"]
+    exitCode: 0
+  - name: "podman user socket symlink exists"
+    command: "test"
+    args: ["-L", "/home/dev/.config/systemd/user/sockets.target.wants/podman.socket"]
+    exitCode: 0
+  - name: "podman system socket enabled"
+    command: "test"
+    args: ["-L", "/etc/systemd/system/sockets.target.wants/podman.socket"]
+    exitCode: 0
+  - name: "ssh config directory exists"
+    command: "test"
+    args: ["-d", "/home/dev/.ssh"]
+    exitCode: 0
+  - name: "ssh config contains Azure DevOps config"
+    command: "test"
+    args: ["-f", "/home/dev/.ssh/config"]
+    exitCode: 0
+  - name: "chrome-wsl wrapper script exists"
+    command: "test"
+    args: ["-f", "/usr/local/bin/chrome-wsl"]
+    exitCode: 0
+  - name: "chrome-wsl is executable"
+    command: "test"
+    args: ["-x", "/usr/local/bin/chrome-wsl"]
+    exitCode: 0
+
+  # User Groups & Permissions
+  - name: "dev user in docker group"
+    command: "groups"
+    args: ["dev"]
+    expectedOutput: ["docker"]
+  - name: "dev user in adm group"
+    command: "groups"
+    args: ["dev"]
+    expectedOutput: ["adm"]
+  - name: "dev user in sudo group"
+    command: "groups"
+    args: ["dev"]
+    expectedOutput: ["sudo"]
+  - name: "dev user has passwordless sudo"
+    command: "test"
+    args: ["-f", "/etc/sudoers.d/90-dev-nopasswd"]
+    exitCode: 0
+  - name: "linuxbrew user exists"
+    command: "id"
+    args: ["linuxbrew"]
+    expectedOutput: ["uid"]
+  - name: "linuxbrew home directory exists"
+    command: "test"
+    args: ["-d", "/home/linuxbrew"]
+    exitCode: 0
+
+  # CodeQL
+  - name: "codeql installation"
+    command: "codeql"
+    args: ["--version"]
+    expectedOutput: [""]

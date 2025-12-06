@@ -1,0 +1,180 @@
+# Version Control
+.git
+.gitignore
+.gitattributes
+.github
+
+# Development Environments
+.venv
+.env
+.env.*
+.vscode
+.idea
+.trunk
+*.code-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Java
+*.class
+*.log
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Build Artifacts
+dist/
+build/
+*.tar
+*.tar.gz
+*.tgz
+*.whl
+*.egg-info/
+.eggs/
+
+# Documentation (keep README.md and docs folder)
+*.md
+!README.md
+!docs/
+
+# Config Files (keep config folder for COPY commands)
+!config/
+
+# Test Results
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+test-results/
+TestResults/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDEs
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+nbproject/
+.nb-gradle/
+
+# Temporary Files
+*.tmp
+*.temp
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Container/Image Files
+*.img
+*.qcow2
+*.vmdk
+*.tar
+
+# Security
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+id_rsa*
+*.env
+
+# CI/CD (GitHub Actions runs in separate context)
+.github/workflows/
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.zip
+
+# Large Data Files
+*.csv
+*.dat
+*.db
+*.sqlite
+*.sqlite3

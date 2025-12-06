@@ -1,0 +1,15 @@
+# Use medium-sized container images for local testing
+# NOTE: This is HOST-LEVEL config for Windows/WSL. Container config is in: config/home/dev/.actrc
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+# Bind mount workspace instead of copying (faster for local development)
+--bind
+
+# Enable verbose output for debugging
+# --verbose
+
+# Container architecture (use host architecture)
+--container-architecture linux/amd64
+
+# Use Podman socket for Docker API compatibility
+--container-daemon-socket unix:///run/podman/podman.sock

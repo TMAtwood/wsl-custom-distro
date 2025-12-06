@@ -1,0 +1,10 @@
+# Use the full image with more tools installed
+-P self-hosted=catthehacker/ubuntu:act-latest
+# -P synology=catthehacker/ubuntu:act-latest
+
+# Use rootless Podman as container backend (dash disables bind mounting)
+--container-daemon-socket -
+--container-architecture linux/amd64
+
+# Enable verbose output for debugging (optional)
+-v
