@@ -5,12 +5,6 @@
 
 CRED_HELPER="${1:-store}"
 
-#  ██████  ██████  ██████  ███████     ██████  ███████ ███████ ███████ ██ ██████  ███████ ███████
-# ██      ██    ██ ██   ██ ██          ██   ██ ██      ██      ██      ██ ██   ██ ██      ██
-# ██      ██    ██ ██████  █████       ██   ██ ███████ █████   ███████ ██ ██████  █████   ███████
-# ██      ██    ██ ██   ██ ██          ██   ██      ██ ██           ██ ██ ██      ██           ██
-#  ██████  ██████  ██   ██ ███████     ██████  ███████ ███████ ███████ ██ ██      ███████ ███████
-
 # Core settings for line endings and case sensitivity
 git config --global core.autocrlf false
 git config --global core.ignorecase false
@@ -32,12 +26,6 @@ git config --global http.sslVerify true
 git config --global init.defaultBranch main
 git config --global safe.directory /home/linuxbrew/.linuxbrew
 
-#  ██████  ██████  ██      ██████  ██████
-# ██      ██    ██ ██      ██    ██ ██   ██
-# ██      ██    ██ ██      ██    ██ ██████
-# ██      ██    ██ ██      ██    ██ ██   ██
-#  ██████  ██████  ███████ ██████  ██   ██
-
 # Color output for better terminal display
 git config --global color.ui true
 
@@ -51,12 +39,6 @@ git config --global difftool.vscode.cmd "code --wait --diff \"\$LOCAL\" \"\$REMO
 # Better merge conflict display (shows base, ours, theirs)
 git config --global merge.conflictstyle diff3
 
-# ██████  ███████ ██    ██ ███████ ██      ██████  ██████  ███████ ███████
-# ██   ██ ██      ██    ██ ██      ██      ██    ██ ██   ██ ██      ██
-# ██   ██ █████   ██    ██ █████   ██      ██    ██ ██████  █████   ███████
-# ██   ██ ██       ██  ██  ██      ██      ██    ██ ██      ██           ██
-# ██████  ███████   ████   ███████ ███████ ██████  ██      ███████ ███████
-
 # Performance optimizations for rebasing and pulling
 git config --global branch.autoSetupMerge true
 git config --global branch.autSetupRebase always
@@ -67,34 +49,15 @@ git config --global rebase.autostash true
 
 # Remember resolved merge conflicts to auto-resolve them in the future
 git config --global rerere.enabled true
-
-# ██████  ██    ██ ███████ ██   ██
-# ██   ██ ██    ██ ██      ██   ██
-# ██████  ██    ██ ███████ ███████
-# ██      ██    ██      ██ ██   ██
-# ██       ██████  ███████ ██   ██
-
 # Safety settings for pushing code
 git config --global push.default current
 git config --global push.followTags true
-
-# ██      ███████  ██████  ██████  ██  ██████
-# ██      ██      ██    ██ ██   ██ ██ ██
-# ██      ██      ██    ██ ██████  ██ ██   ███
-# ██      ██      ██    ██ ██   ██ ██ ██    ██
-# ███████ ███████  ██████  ██   ██ ██  ██████
 
 # Pretty log output with branch/tag decorations
 git config --global log.decorate short
 
 # Show untracked files in git status
 git config --global status.showUntrackedFiles all
-
-#  █████  ██      ██  █████  ███████ ███████ ███████
-# ██   ██ ██      ██ ██   ██ ██      ██      ██
-# ███████ ██      ██ ███████ ███████ █████   ███████
-# ██   ██ ██      ██ ██   ██      ██ ██           ██
-# ██   ██ ███████ ██ ██   ██ ███████ ███████ ███████
 
 # Useful command aliases for common workflows
 git config --global alias.amend "commit --amend --no-edit"
