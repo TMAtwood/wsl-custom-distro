@@ -54,11 +54,12 @@ The tests are organized into the following categories:
 
 ### 7. .NET & Tools
 
-- .NET SDK 8.0 & 9.0
+- .NET SDK 8.0, 9.0 & 10.0
 - dotnet-coverage
 - dotnet-format
 - GitVersion
 - PowerShell Core
+- **Note**: .NET 10.0 installed via official dotnet-install.sh script
 
 ### 8. Java
 

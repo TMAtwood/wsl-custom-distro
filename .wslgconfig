@@ -1,43 +1,20 @@
-# Settings apply across all Linux distros running on WSL 2
+# WSL 2 Global Configuration
+# This file applies to all WSL 2 distros
+
 [wsl2]
-
-# Limits VM memory to use no more than 32GB, this can be set as whole numbers using GB or MB
-memory=32GB
-
-# Sets the VM to use 16 virtual processors
-processors=16
-
-# Specify a custom Linux kernel to use with your installed distros. The default kernel used can be found at https://github.com/microsoft/WSL2-Linux-Kernel
-# kernel=C:\\temp\\myCustomKernel
-
-# Sets additional kernel parameters, in this case enabling older Linux base images such as Centos 6
-# kernelCommandLine = vsyscall=emulate
-
-# Sets amount of swap storage space to 8GB, default is 25% of available RAM
-swap=8GB
-
-# Sets swapfile path location, default is %USERPROFILE%\AppData\Local\Temp\swap.vhdx
+# Allocate resources for development work
+memory=24GB
+processors=12
+swap=6GB
 swapfile=C:\\temp\\wsl-swap.vhdx
 
-# Disable page reporting so WSL retains all allocated memory claimed from Windows and releases none back when free
-pageReporting=false
-
-# Turn off default connection to bind WSL 2 localhost to Windows localhost
+# VM tuning
 localhostforwarding=true
-
-# Disables nested virtualization
 nestedVirtualization=false
 
-# Turns on output console showing contents of dmesg when opening a WSL 2 distro for debugging
-debugConsole=true
+# Debugging
+debugConsole=false
 
-[system-distro-env]
-WESTON_RDP_DISABLE_FRACTIONAL_HI_DPI_SCALING=false
-WESTON_RDP_FRACTIONAL_HI_DPI_SCALING=false
-
-; scale factor: 100–500, try 150 or 200
-WESTON_RDP_DEBUG_DESKTOP_SCALING_FACTOR=200
-
-# Enable experimental features
 [experimental]
 sparseVhd=true
+autoMemoryReclaim=gradual

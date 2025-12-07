@@ -142,6 +142,9 @@ main() {
 
   if ! $PODMAN_CMD build \
     --format docker \
+    --network=host \
+    --dns=1.1.1.1 \
+    --dns=8.8.8.8 \
     --platform linux/amd64 \
     --build-arg BUILD_DATE="$BUILD_DATE" \
     -t "$IMAGE_NAME_AND_VERSION" \

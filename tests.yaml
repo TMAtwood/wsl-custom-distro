@@ -165,6 +165,10 @@ commandTests:
     command: "dotnet"
     args: ["--list-sdks"]
     expectedOutput: ["9.0"]
+  - name: "dotnet 10.0 installation"
+    command: "dotnet"
+    args: ["--list-sdks"]
+    expectedOutput: ["10.0"]
   - name: "dotnet-coverage installation"
     command: "dotnet-coverage"
     args: ["--version"]

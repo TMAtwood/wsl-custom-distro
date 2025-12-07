@@ -146,11 +146,12 @@ This document outlines the plan to refactor the monolithic 1025-line Dockerfile 
 
 #### .NET (lines 607-628)
 
-- .NET SDK 8.0, 9.0
+- .NET SDK 8.0, 9.0 (via apt), 10.0 (via dotnet-install.sh)
 - Global tools:
   - coverlet, CycloneDX, dotnet-dump, dotnet-gcdump
   - dotnet-format, dotnet-trace, GitVersion, PowerShell
   - paket, fake-cli, SpecFlow, trx2junit
+- **Note**: .NET 10.0 installed via official dotnet-install.sh script (not available in apt)
 
 **Why separate**: Language runtimes change more frequently than package managers. Good caching boundary.
 

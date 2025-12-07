@@ -32,7 +32,7 @@ Setting up a development environment is time-consuming and error-prone. This pro
 - **🔒 Security First** - Pre-installed scanners and best practices
 - **🌍 Multi-Language** - Python, Node.js, Go, Java, .NET, and more
 - **☁️ Cloud Ready** - Azure, AWS, and Kubernetes tools included
-- **✅ Tested** - 100+ automated tests ensure reliability
+- **✅ Tested** - 242 automated tests ensure reliability
 - **📦 Reproducible** - Containerized for consistent environments
 - **🔄 Always Current** - Auto-fetches latest tool versions
 
@@ -109,12 +109,13 @@ Whether you're a DevOps engineer, cloud architect, security researcher, or full-
 <details>
 <summary><b>💜 .NET Ecosystem</b></summary>
 
-- **SDK**: .NET 8.0, 9.0
+- **SDK**: .NET 8.0, 9.0, 10.0
 - **Tools**:
   - `dotnet-coverage` - Code coverage
   - `dotnet-format` - Code formatter
   - `gitversion` - Semantic versioning
   - `powershell` (pwsh) - PowerShell Core
+- **Note**: .NET 10.0 installed via official dotnet-install.sh script
 
 </details>
 
@@ -271,10 +272,10 @@ Whether you're a DevOps engineer, cloud architect, security researcher, or full-
     ```
 
     **Note**: The `setup-wsl.ps1` script automatically copies `.wslgconfig` to your Windows user profile (`$env:USERPROFILE\.wslgconfig`). This configuration file includes:
-    - **High-DPI Scaling**: `WESTON_RDP_DEBUG_DESKTOP_SCALING_FACTOR=200` for 2x GUI scaling in WSLg
-    - **Memory/CPU Limits**: 32GB RAM, 16 virtual processors
-    - **Swap Configuration**: 8GB swap space at `C:\temp\wsl-swap.vhdx`
-    - **WSL2 Settings**: Localhost forwarding, debug console, and experimental features
+    - **High-DPI Scaling**: `WESTON_RDP_DEBUG_DESKTOP_SCALING_FACTOR=150` for balanced GUI scaling in WSLg
+    - **Memory/CPU Limits**: 24GB RAM, 12 virtual processors
+    - **Swap Configuration**: 6GB swap space at `C:\temp\wsl-swap.vhdx`
+    - **WSL2 Settings**: Localhost forwarding, auto memory reclaim, and experimental features
 
 4. **Start using your environment**:
 
@@ -319,7 +320,7 @@ Both build scripts include:
 
 ## ✅ Testing
 
-This project includes **100+ automated tests** using [Container Structure Test](https://github.com/GoogleContainerTools/container-structure-test).
+This project includes **242 automated tests** using [Container Structure Test](https://github.com/GoogleContainerTools/container-structure-test).
 
 ### Local Testing with GitHub Actions Workflow
 
@@ -619,7 +620,7 @@ All files default to **LF** line endings (configured via `.gitattributes`):
 ## 📊 Project Stats
 
 - **100+ Tools**: Curated selection of industry-standard tools
-- **100+ Tests**: Comprehensive validation suite
+- **242 Tests**: Comprehensive validation suite
 - **5 Language Runtimes**: Python, Node.js, Go, Java, .NET
 - **20+ Security Tools**: From scanning to secrets detection
 - **15+ IaC Tools**: Complete Terraform ecosystem

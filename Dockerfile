@@ -132,10 +132,27 @@ RUN groupadd -g 1001 ${USER} \
 COPY config/scripts/setup-git-config.sh /usr/local/bin/setup-git-config.sh
 RUN chmod +x /usr/local/bin/setup-git-config.sh
 
-RUN add-apt-repository ppa:kubescape/kubescape \
-    && add-apt-repository ppa:deadsnakes/ppa -y \
-    && add-apt-repository ppa:cappelikan/ppa -y \
-    && add-apt-repository ppa:dotnet/backports -y
+# Configure DNS before adding PPAs to ensure network connectivity
+# Backup existing resolv.conf and configure reliable DNS servers
+# hadolint ignore=DL3059
+RUN cp /etc/resolv.conf /etc/resolv.conf.backup 2>/dev/null || true && \
+    printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf
+
+# Add PPAs with retry logic and network error handling
+# hadolint ignore=DL3059
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Adding PPAs..." && \
+      add-apt-repository ppa:kubescape/kubescape -y && \
+      add-apt-repository ppa:deadsnakes/ppa -y && \
+      add-apt-repository ppa:cappelikan/ppa -y && \
+      add-apt-repository ppa:dotnet/backports -y && \
+      echo "Successfully added all PPAs" && \
+      break || { echo "Failed attempt $attempt, retrying in 5 seconds..."; sleep 5; }; \
+    done
+
+# Restore original resolv.conf if backup exists
+# hadolint ignore=DL3059
+RUN mv /etc/resolv.conf.backup /etc/resolv.conf 2>/dev/null || true
 
 # RUN wget -O - https://apt.corretto.aws/corretto.key | sudo gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg \
 #     && echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
@@ -628,6 +645,12 @@ WORKDIR /home/${USER}
 USER ${USER}
 
 ENV PATH="/home/${USER}/.dotnet/tools:$PATH"
+
+# Install .NET 10 SDK via official dotnet-install.sh script
+RUN curl -L https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+    && chmod +x /tmp/dotnet-install.sh \
+    && /tmp/dotnet-install.sh --channel 10.0 --install-dir /home/${USER}/.dotnet \
+    && rm /tmp/dotnet-install.sh
 
 RUN dotnet tool install -g coverlet.console \
     && dotnet tool install -g CycloneDX \

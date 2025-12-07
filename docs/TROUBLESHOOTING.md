@@ -423,13 +423,16 @@ google-chrome --no-sandbox
 **Use chrome-wsl wrapper:**
 
 ```bash
-# Custom wrapper with correct settings
+# Custom wrapper with optimized settings for WSL
+# Uses X11 rendering and 1.0x scale factor for better compatibility
 chrome-wsl
 ```
 
+**Note**: The `chrome-wsl` wrapper is configured to use X11 instead of Wayland for better graphics compatibility in WSL. If you experience window sizing issues, check your `.wslconfig` file for the `WESTON_RDP_DEBUG_DESKTOP_SCALING_FACTOR` setting (recommended: 150).
+
 #### Reference
 
-Chrome wrapper: [Dockerfile:968-971](../Dockerfile#L968-L971)
+Chrome wrapper: [config/scripts/chrome-wsl](../config/scripts/chrome-wsl)
 
 ---
 
