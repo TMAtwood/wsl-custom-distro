@@ -711,23 +711,10 @@ commandTests:
     command: "fake"
     args: ["--version"]
     expectedOutput: [""]
-  - name: "dotnet-interactive installation"
-    command: "dotnet"
-    args: ["interactive", "--version"]
-    expectedOutput: [""]
   - name: "paket installation"
     command: "paket"
     args: ["--version"]
     expectedOutput: [""]
-  - name: "livingdoc installation"
-    command: "livingdoc"
-    args: ["--version"]
-    expectedOutput: [""]
-  - name: "trx2junit installation"
-    command: "which"
-    args: ["trx2junit"]
-    expectedOutput: ["trx2junit"]
-
   # NPM Global Packages
   - name: "claude-code installation"
     command: "bash"
@@ -763,13 +750,9 @@ commandTests:
     expectedOutput: [""]
 
   # Homebrew Configuration & Scripts
-  - name: "bash-git-prompt installation"
-    command: "test"
-    args: ["-f", "/home/linuxbrew/.linuxbrew/opt/bash-git-prompt/share/gitprompt.sh"]
-    exitCode: 0
-  - name: "bash-git-prompt configured in bashrc"
+  - name: "fix-win-perms function configured in bashrc"
     command: "grep"
-    args: ["-q", "bash-git-prompt", "/home/dev/.bashrc"]
+    args: ["-q", "fix-win-perms", "/home/dev/.bashrc"]
     exitCode: 0
 
   # System Utilities

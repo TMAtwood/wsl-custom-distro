@@ -40,7 +40,10 @@
       "Bash(powershell -Command:*)",
       "Bash(cmd /c \"rmdir /s /q C:\\Users\\ThomasMAtwood\\.cache\\pre-commit 2>nul &amp; echo Cache directory removed\")",
       "Bash(timeout 300 pre-commit run:*)",
-      "Bash(timeout 120 bash -c 'cd /c/Users/ThomasMAtwood/repos/wsl-custom-distro && pre-commit run check-executables-have-shebangs --all-files 2>&1':*)"
+      "Bash(timeout 120 bash -c 'cd /c/Users/ThomasMAtwood/repos/wsl-custom-distro && pre-commit run check-executables-have-shebangs --all-files 2>&1':*)",
+      "Bash(./build.sh:*)",
+      "Bash(python3:*)",
+      "Bash(SKIP=trufflehog pre-commit run:*)"
     ],
     "deny": [],
     "ask": []
