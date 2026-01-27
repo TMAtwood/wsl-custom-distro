@@ -142,7 +142,6 @@ main() {
 
   if ! $PODMAN_CMD build \
     --format docker \
-    --network=host \
     --dns=1.1.1.1 \
     --dns=8.8.8.8 \
     --platform linux/amd64 \

@@ -139,7 +139,7 @@ RUN cp /etc/resolv.conf /etc/resolv.conf.backup 2>/dev/null || true && \
     printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf
 
 # Add PPAs with retry logic and network error handling
-# hadolint ignore=DL3059
+# hadolint ignore=DL3059,SC2015
 RUN for attempt in 1 2 3; do \
       echo "Attempt $attempt: Adding PPAs..." && \
       add-apt-repository ppa:kubescape/kubescape -y && \
@@ -187,10 +187,53 @@ RUN (apt-get remove -y 'dotnet*' 'aspnet*' 'netstandard*' || true) \
 # WSL config: enable systemd, set default user, configure automount and network
 COPY config/etc/wsl.conf /etc/wsl.conf
 
-# Create custom resolv.conf override for DNS
-RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf.override \
-    && echo "nameserver 8.8.4.4" >> /etc/resolv.conf.override \
-    && echo "nameserver 8.8.8.8" >> /etc/resolv.conf.override
+# Configure static DNS since generateResolvConf=false in wsl.conf
+# Using Cloudflare (1.1.1.1) and Google (8.8.8.8) public DNS servers
+# Note: resolv.conf will be protected by generateResolvConf=false in wsl.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
+    && chmod 644 /etc/resolv.conf
+
+# Create network fix script for WSL2/Tailscale compatibility
+# This script fixes both DNS and default route issues common with Tailscale VPN
+RUN printf '#!/bin/bash\n\
+# WSL2 Network Fix - fixes DNS and default route (Tailscale compatibility)\n\
+\n\
+# Fix DNS if resolv.conf is empty or missing\n\
+if [ ! -s /etc/resolv.conf ] || ! grep -q "nameserver" /etc/resolv.conf 2>/dev/null; then\n\
+    echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf > /dev/null\n\
+    echo "nameserver 8.8.8.8" | sudo tee -a /etc/resolv.conf > /dev/null\n\
+fi\n\
+\n\
+# Fix default route if missing\n\
+if ! ip route 2>/dev/null | grep -q "^default"; then\n\
+    # Get network info and calculate proper gateway\n\
+    # For a /20 subnet like 172.26.176.0/20, gateway is 172.26.176.1\n\
+    NETWORK_INFO=$(ip -4 addr show eth0 2>/dev/null | grep -oP "inet \\K[0-9.]+/[0-9]+")\n\
+    if [ -n "$NETWORK_INFO" ]; then\n\
+        # Extract IP and prefix length\n\
+        IP_ADDR=$(echo "$NETWORK_INFO" | cut -d"/" -f1)\n\
+        PREFIX=$(echo "$NETWORK_INFO" | cut -d"/" -f2)\n\
+        # Calculate network address based on prefix\n\
+        IFS="." read -r a b c d <<< "$IP_ADDR"\n\
+        if [ "$PREFIX" -le 16 ]; then\n\
+            GATEWAY="$a.$b.0.1"\n\
+        elif [ "$PREFIX" -le 20 ]; then\n\
+            # For /20, mask the third octet to nearest 16 boundary\n\
+            c=$((c & 240))\n\
+            GATEWAY="$a.$b.$c.1"\n\
+        elif [ "$PREFIX" -le 24 ]; then\n\
+            GATEWAY="$a.$b.$c.1"\n\
+        else\n\
+            GATEWAY="$a.$b.$c.1"\n\
+        fi\n\
+        sudo ip route add default via "$GATEWAY" dev eth0 2>/dev/null || true\n\
+    fi\n\
+fi\n' > /etc/profile.d/wsl-network-fix.sh \
+    && chmod +x /etc/profile.d/wsl-network-fix.sh
+
+# Allow dev user to run ip and tee commands without password for network fix script
+RUN echo "dev ALL=(ALL) NOPASSWD: /usr/sbin/ip, /usr/bin/tee /etc/resolv.conf, /usr/bin/tee -a /etc/resolv.conf" >> /etc/sudoers.d/wsl-network \
+    && chmod 440 /etc/sudoers.d/wsl-network
 
 # Create symlinks to Windows tools (will work when WSL is running)
 # hadolint ignore=SC2015
@@ -297,7 +340,8 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | ba
     && echo 'export NVM_DIR="/home/${USER}/.nvm"' >> /home/${USER}/.bashrc \
     && echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /home/${USER}/.bashrc \
     && echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /home/${USER}/.bashrc \
-    && echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/${USER}/.bashrc
+    && echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/${USER}/.bashrc \
+    && echo 'export ENABLE_LSP_TOOLS=1' >> /home/${USER}/.bashrc
 
 
 #  ██  ██       ██████   ██████  ██████  ██████  ███████ ██     ██
@@ -646,28 +690,24 @@ USER ${USER}
 
 ENV PATH="/home/${USER}/.dotnet/tools:$PATH"
 
-# Install .NET 10 SDK via official dotnet-install.sh script
-RUN curl -L https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
-    && chmod +x /tmp/dotnet-install.sh \
-    && /tmp/dotnet-install.sh --channel 10.0 --install-dir /home/${USER}/.dotnet \
-    && rm /tmp/dotnet-install.sh
-
-RUN dotnet tool install -g coverlet.console \
-    && dotnet tool install -g CycloneDX \
-    && dotnet tool install -g dotnet-coverage \
-    && dotnet tool install -g dotnet-dump \
-    && dotnet tool install -g dotnet-format\
-    && dotnet tool install -g dotnet-gcdump \
-    && dotnet tool install -g dotnet-reportgenerator-globaltool \
-    && dotnet tool install -g dotnet-script \
-    && dotnet tool install -g dotnet-trace \
-    && dotnet tool install -g fake-cli \
-    && dotnet tool install -g GitVersion.Tool \
-    && dotnet tool install -g Microsoft.dotnet-interactive \
-    && dotnet tool install -g paket \
-    && dotnet tool install -g powershell \
-    && dotnet tool install -g SpecFlow.Plus.LivingDoc.CLI \
-    && dotnet tool install -g trx2junit
+# Install .NET global tools with retry logic for network resilience
+# hadolint ignore=SC2015
+RUN for i in 1 2 3; do \
+      dotnet tool install -g coverlet.console && \
+      dotnet tool install -g CycloneDX && \
+      dotnet tool install -g dotnet-coverage && \
+      dotnet tool install -g dotnet-dump && \
+      dotnet tool install -g dotnet-format && \
+      dotnet tool install -g dotnet-gcdump && \
+      dotnet tool install -g dotnet-reportgenerator-globaltool && \
+      dotnet tool install -g dotnet-script && \
+      dotnet tool install -g dotnet-trace && \
+      dotnet tool install -g fake-cli && \
+      dotnet tool install -g GitVersion.Tool && \
+      dotnet tool install -g paket && \
+      dotnet tool install -g powershell && \
+      break || { echo "Attempt $i failed, retrying in 5 seconds..."; sleep 5; } \
+    done
 
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -697,7 +737,10 @@ RUN echo 'alias d="docker"' >> /home/${USER}/.bashrc \
     && echo 'alias tf="tofu"' >> /home/${USER}/.bashrc \
     && echo 'eval $(ssh-agent)' >> /home/${USER}/.bashrc \
     && echo 'export BROWSER=wslview' >> /home/${USER}/.bashrc \
-    && echo 'export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock' >> /home/${USER}/.bashrc
+    && echo 'export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock' >> /home/${USER}/.bashrc \
+    && echo 'export ENABLE_LSP_TOOLS=1' >> /home/${USER}/.bashrc \
+    && echo '# Fix Windows directory permissions (missing execute bit prevents cd)' >> /home/${USER}/.bashrc \
+    && echo 'fix-win-perms() { find "${1:-.}" -maxdepth "${2:-1}" -type d ! -perm -111 -exec chmod +x {} \; 2>/dev/null && echo "Fixed directory permissions in ${1:-.}"; }' >> /home/${USER}/.bashrc
 
 
 #  ██  ██       █████   ██████ ████████
@@ -736,73 +779,146 @@ USER ${USER}
 
 ARG BUILD_DATE
 
-# Add Homebrew taps
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-    && brew tap spring-io/tap \
-    && brew tap tofuutils/tap
+# Ensure DNS is properly configured for network operations in this stage
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
+    && chmod 644 /etc/resolv.conf
+USER ${USER}
 
-# Install development tools
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-    && brew install act \
-    && brew install bash-git-prompt \
-    && brew install btop \
-    && brew install delta \
-    && brew install gcc \
-    && brew install gh \
-    && brew install gitversion \
-    && brew install tldr
+# Disable Homebrew's auto-update and API mode during build to reduce network dependencies
+ENV HOMEBREW_NO_AUTO_UPDATE=1
+ENV HOMEBREW_NO_INSTALL_FROM_API=1
 
-# Install container tools
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-    && brew install container-structure-test \
-    && brew install copa \
-    && brew install cosign \
-    && brew install crane \
-    && brew install dive \
-    && brew install hadolint \
-    && brew install helm \
-    && brew install k9s \
-    && brew install kompose \
-    && brew install krew \
-    && brew install kubescape \
-    && brew install kustomize \
-    && brew install lazydocker \
-    && brew install mkcert \
-    && brew install podman
+# Add Homebrew taps with DNS setup and retry logic for network resilience
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+USER ${USER}
+# hadolint ignore=SC2015
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Adding Homebrew taps..." && \
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+      brew tap spring-io/tap && \
+      brew tap tofuutils/tap && \
+      echo "Successfully added all taps" && \
+      break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
+    done
 
-# Install security scanning tools
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-    && brew install dependency-check \
-    && brew install gitleaks \
-    && brew install grype \
-    && brew install osv-scanner \
-    && brew install syft \
-    && brew install trivy
+# Install development tools with DNS setup and retry logic
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+USER ${USER}
+# hadolint ignore=SC2015
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Installing development tools..." && \
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+      brew install act && \
+      brew install btop && \
+      brew install delta && \
+      brew install gcc && \
+      brew install gh && \
+      brew install gitversion && \
+      brew install starship && \
+      brew install tldr && \
+      echo "Successfully installed all development tools" && \
+      break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
+    done
 
-# Install infrastructure/terraform tools
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-    && brew install infracost \
-    && brew install tenv \
-    && brew install terraform-docs \
-    && brew install terraformer \
-    && brew install terrascan \
-    && brew install tflint \
-    && brew install tfsec \
-    && brew install tfupdate
+# Install container tools with DNS setup and retry logic
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+USER ${USER}
+# hadolint ignore=SC2015
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Installing container tools..." && \
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+      brew install container-structure-test && \
+      brew install copa && \
+      brew install cosign && \
+      brew install crane && \
+      brew install dive && \
+      brew install hadolint && \
+      brew install helm && \
+      brew install k9s && \
+      brew install kompose && \
+      brew install krew && \
+      brew install kubescape && \
+      brew install kustomize && \
+      brew install lazydocker && \
+      brew install mkcert && \
+      brew install podman && \
+      echo "Successfully installed all container tools" && \
+      break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
+    done
 
-# Install specialized tools
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-    && brew install linka-cloud/tap/d2vm \
-    && brew install spring-boot \
-    && brew install uv \
-    && brew install yamllint \
-    && brew install yq
+# Install security scanning tools with DNS setup and retry logic
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+USER ${USER}
+# hadolint ignore=SC2015
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Installing security scanning tools..." && \
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+      brew install dependency-check && \
+      brew install gitleaks && \
+      brew install grype && \
+      brew install osv-scanner && \
+      brew install syft && \
+      brew install trivy && \
+      echo "Successfully installed all security tools" && \
+      break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
+    done
 
-# Upgrade all brew packages and configure tenv
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-    && brew upgrade \
-    && tenv opentofu install latest \
-    && tenv opentofu use latest
+# Install infrastructure/terraform tools with DNS setup and retry logic
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+USER ${USER}
+# hadolint ignore=SC2015
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Installing infrastructure/terraform tools..." && \
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+      brew install infracost && \
+      brew install tenv && \
+      brew install terraform-docs && \
+      brew install terraformer && \
+      brew install terrascan && \
+      brew install tflint && \
+      brew install tfsec && \
+      brew install tfupdate && \
+      echo "Successfully installed all infrastructure tools" && \
+      break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
+    done
+
+# Install specialized tools with DNS setup and retry logic
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+USER ${USER}
+# hadolint ignore=SC2015
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Installing specialized tools..." && \
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+      brew install linka-cloud/tap/d2vm && \
+      brew install spring-boot && \
+      brew install uv && \
+      brew install yamllint && \
+      brew install yq && \
+      echo "Successfully installed all specialized tools" && \
+      break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
+    done
+
+# Upgrade all brew packages and configure tenv with DNS setup and retry logic
+USER root
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+USER ${USER}
+# hadolint ignore=SC2015
+RUN for attempt in 1 2 3; do \
+      echo "Attempt $attempt: Upgrading brew packages and configuring tenv..." && \
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+      brew upgrade && \
+      tenv opentofu install latest && \
+      tenv opentofu use latest && \
+      echo "Successfully upgraded and configured" && \
+      break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
+    done
 
 # Create symlinks for Homebrew-installed tools to /usr/local/bin for root access
 USER root
@@ -938,6 +1054,7 @@ RUN python -m pip install --no-cache-dir --break-system-packages --ignore-instal
       detect-secrets \
       podman-compose \
       pre-commit \
+      pyright \
       uv
 
 
@@ -971,12 +1088,13 @@ COPY config/etc/systemd/system/make-root-shared.service /etc/systemd/system/make
 # Enable the system unit (creates the wants/ symlink)
 RUN ln -s ../make-root-shared.service /etc/systemd/system/multi-user.target.wants/make-root-shared.service || true
 
+# Install Starship configuration
+COPY config/home/dev/.config/starship.toml /home/${USER}/.config/starship.toml
+RUN chown ${USER}:${GROUP} /home/${USER}/.config/starship.toml
+
 RUN echo "" >> /home/${USER}/.bashrc \
-    && echo 'if [ -f "/home/linuxbrew/.linuxbrew/opt/bash-git-prompt/share/gitprompt.sh" ]; then' >> /home/${USER}/.bashrc \
-    && echo '  __GIT_PROMPT_DIR="/home/linuxbrew/.linuxbrew/opt/bash-git-prompt/share"' >> /home/${USER}/.bashrc \
-    && echo "  GIT_PROMPT_ONLY_IN_REPO=1" >> /home/${USER}/.bashrc \
-    && echo '  source "/home/linuxbrew/.linuxbrew/opt/bash-git-prompt/share/gitprompt.sh"' >> /home/${USER}/.bashrc \
-    && echo "fi" >> /home/${USER}/.bashrc \
+    && echo "# Initialize Starship prompt" >> /home/${USER}/.bashrc \
+    && echo 'eval "$(starship init bash)"' >> /home/${USER}/.bashrc \
     && echo "" >> /home/${USER}/.bashrc \
     && echo "# Start keychain and add the key" >> /home/${USER}/.bashrc \
     && echo 'eval $(keychain --eval ~/.ssh/id_rsa)' >> /home/${USER}/.bashrc \
@@ -1057,6 +1175,7 @@ RUN mkdir -p /home/${USER}/.ssh \
     && sh -c 'echo :WSLInterop:M::MZ::/init:PF > /usr/lib/binfmt.d/WSLInterop.conf' \
     && chown -R ${USER}:${GROUP} /home/${USER} \
     && printf '\nexport PODMAN_IGNORE_CGROUPSV1_WARNING=1\n' >> /home/${USER}/.bashrc \
+    && printf '\nexport ENABLE_LSP_TOOLS=1\n' >> /home/${USER}/.bashrc \
     && printf '\nnvm use node\n' >> /home/${USER}/.bashrc
 
 # Enable "linger" for the user without calling loginctl (works in images):
@@ -1096,7 +1215,8 @@ RUN echo 'export CLUTTER_BACKEND=wayland' >> /home/${USER}/.bashrc \
     && echo 'export PULSE_SERVER=unix:/mnt/wslg/PulseServer' >> /home/${USER}/.bashrc \
     && echo 'export QT_QPA_PLATFORM=wayland' >> /home/${USER}/.bashrc \
     && echo 'export WAYLAND_DISPLAY=wayland-0' >> /home/${USER}/.bashrc \
-    && echo 'export XDG_RUNTIME_DIR=/run/user/1001' >> /home/${USER}/.bashrc
+    && echo 'export XDG_RUNTIME_DIR=/run/user/1001' >> /home/${USER}/.bashrc \
+    && echo 'export ENABLE_LSP_TOOLS=1' >> /home/${USER}/.bashrc
 
 
 #  ██  ██      ██     ██ ███████ ██          ██    ██ ██████  ███    ██ ██   ██ ██ ████████
