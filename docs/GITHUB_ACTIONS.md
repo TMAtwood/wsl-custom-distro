@@ -30,7 +30,7 @@ The workflow runs on:
 - Container image tagged with semantic version and `latest`
 - Test results showing pass/fail for all 88 tests
 - Compressed image artifact for download (main branch pushes only, 7-day retention)
-- Published container image on GitHub Container Registry at `ghcr.io/tmatwood/wsl-ubuntu-24.04`
+- Published container image on GitHub Container Registry at `ghcr.io/tmatwood/wsl-ubuntu-26.04`
 
 ### Local Testing with `act`
 
@@ -191,13 +191,13 @@ After a successful build on the `main` branch, you can pull the image:
 
 ```bash
 # Pull specific version
-docker pull ghcr.io/tmatwood/wsl-ubuntu-24.04:0.1.0
+docker pull ghcr.io/tmatwood/wsl-ubuntu-26.04:0.1.0
 
 # Pull latest
-docker pull ghcr.io/tmatwood/wsl-ubuntu-24.04:latest
+docker pull ghcr.io/tmatwood/wsl-ubuntu-26.04:latest
 
 # Using with Podman
-podman pull ghcr.io/tmatwood/wsl-ubuntu-24.04:latest
+podman pull ghcr.io/tmatwood/wsl-ubuntu-26.04:latest
 ```
 
 #### Making Images Public
@@ -205,7 +205,7 @@ podman pull ghcr.io/tmatwood/wsl-ubuntu-24.04:latest
 By default, images published to GHCR are private. To make them public:
 
 1. Go to your GitHub profile → Packages
-2. Find `wsl-ubuntu-24.04` package
+2. Find `wsl-ubuntu-26.04` package
 3. Click "Package settings"
 4. Scroll to "Danger Zone" → Change visibility → Make public
 

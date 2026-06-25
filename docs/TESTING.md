@@ -1,6 +1,6 @@
 # Container Structure Tests
 
-This document describes the testing strategy for the WSL Ubuntu 24.04 development image.
+This document describes the testing strategy for the WSL Ubuntu 26.04 development image.
 
 ## Overview
 
@@ -177,14 +177,14 @@ The tests are organized into the following categories:
 bash run_tests.sh
 
 # Or specify a custom image name
-IMAGE_NAME=localhost/tmatwood/ubuntu-24.04:0.1.0 bash run_tests.sh
+IMAGE_NAME=localhost/tmatwood/ubuntu-26.04:0.1.0 bash run_tests.sh
 ```
 
 ### Run Tests on Specific Image
 
 ```bash
 container-structure-test test \
-  --image localhost/tmatwood/ubuntu-24.04:latest \
+  --image localhost/tmatwood/ubuntu-26.04:latest \
   --config tests.yaml
 ```
 
@@ -194,7 +194,7 @@ To run only certain tests, you can filter by test name:
 
 ```bash
 container-structure-test test \
-  --image localhost/tmatwood/ubuntu-24.04:latest \
+  --image localhost/tmatwood/ubuntu-26.04:latest \
   --config tests.yaml \
   --test-report output.json
 ```
@@ -212,7 +212,7 @@ Example output:
 ====================================
 ====== Test file: tests.yaml ======
 ====================================
-Running tests for image: localhost/tmatwood/ubuntu-24.04:latest
+Running tests for image: localhost/tmatwood/ubuntu-26.04:latest
 
 === RUN: Command Test: git installation
 --- PASS

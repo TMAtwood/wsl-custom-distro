@@ -19,7 +19,7 @@ services:
   github-runner:
     # Use your custom WSL2 image for consistency with development environment
     # Falls back to standard image if custom image not available
-    image: ${RUNNER_IMAGE:-localhost/tmatwood/ubuntu-24.04:latest}
+    image: ${RUNNER_IMAGE:-localhost/tmatwood/ubuntu-26.04:latest}
     container_name: github-runner-local-dev
 
     environment:

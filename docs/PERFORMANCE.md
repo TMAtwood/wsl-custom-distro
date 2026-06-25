@@ -1,6 +1,6 @@
 # Performance Guide
 
-This document provides performance benchmarks, build optimization tips, and resource usage information for the WSL Ubuntu 24.04 Development Environment.
+This document provides performance benchmarks, build optimization tips, and resource usage information for the WSL Ubuntu 26.04 Development Environment.
 
 ---
 
@@ -182,7 +182,7 @@ See [TROUBLESHOOTING.md - Homebrew Issues](TROUBLESHOOTING.md#homebrew-installat
 
 | Category | Size | Percentage |
 | ---------- | ------ | ------------ |
-| Base Ubuntu 24.04 | ~200 MB | 2% |
+| Base Ubuntu 26.04 | ~200 MB | 2% |
 | System Packages (apt) | ~1.5 GB | 18% |
 | Java (5 versions) | ~800 MB | 9% |
 | Homebrew + Packages | ~1.5 GB | 18% |
@@ -426,7 +426,7 @@ See [tests.yaml](../tests.yaml) for complete test suite.
 
 ```dockerfile
 # Base image: Ubuntu + system packages + language runtimes
-FROM base-wsl-ubuntu:24.04
+FROM base-wsl-ubuntu:26.04
 # Then add: Homebrew packages, configuration
 ```
 

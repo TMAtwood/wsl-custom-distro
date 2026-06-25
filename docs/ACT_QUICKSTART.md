@@ -94,7 +94,7 @@ act workflow_dispatch
 act push --container-architecture linux/amd64
 
 # Run without building image (use existing)
-act push --job build-and-test --container-image localhost/tmatwood/ubuntu-24.04:latest
+act push --job build-and-test --container-image localhost/tmatwood/ubuntu-26.04:latest
 
 # Set secrets for authentication
 act push --secret GITHUB_TOKEN=your_token_here
@@ -137,10 +137,10 @@ To get a token:
 
 ```bash
 # Use your pre-built custom image
-act push --container-image localhost/tmatwood/ubuntu-24.04:latest
+act push --container-image localhost/tmatwood/ubuntu-26.04:latest
 
 # Or use a lighter Ubuntu image
-act push --container-image ubuntu:24.04
+act push --container-image ubuntu:26.04
 ```
 
 ### Issue: Container socket errors
@@ -241,7 +241,7 @@ Create `.actrc` in your home directory:
 
 ```ini
 # Use your custom image for all jobs
--C localhost/tmatwood/ubuntu-24.04:latest
+-C localhost/tmatwood/ubuntu-26.04:latest
 
 # Verbose output by default
 -v

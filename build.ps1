@@ -1,5 +1,5 @@
 # ============================================================================
-# Build Script for WSL Ubuntu 24.04 Development Environment
+# Build Script for WSL Ubuntu 26.04 Development Environment
 # ============================================================================
 # This script builds the Docker/Podman image with proper error handling
 # and version management using GitVersion for semantic versioning.
@@ -91,7 +91,7 @@ function Get-BuildVersion {
 
 try {
     Write-ColorOutput "`n========================================" $ColorInfo
-    Write-ColorOutput "  WSL Ubuntu 24.04 Image Build" $ColorInfo
+    Write-ColorOutput "  WSL Ubuntu 26.04 Image Build" $ColorInfo
     Write-ColorOutput "========================================`n" $ColorInfo
 
     # Get version
@@ -104,7 +104,7 @@ try {
     Write-InfoMsg "Build date: $BUILD_DATE"
 
     # Define image names
-    $IMAGE_NAME = "localhost/tmatwood/ubuntu-24.04"
+    $IMAGE_NAME = "localhost/tmatwood/ubuntu-26.04"
     $IMAGE_NAME_AND_VERSION = "${IMAGE_NAME}:${VERSION}"
     $IMAGE_NAME_LATEST = "${IMAGE_NAME}:latest"
 

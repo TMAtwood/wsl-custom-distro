@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide covers common issues and their solutions for the WSL Ubuntu 24.04 Development Environment.
+This guide covers common issues and their solutions for the WSL Ubuntu 26.04 Development Environment.
 
 ---
 
@@ -510,7 +510,7 @@ Tool not installed or version output format changed.
 
 ```bash
 # Enter the container
-podman run -it --rm localhost/tmatwood/ubuntu-24.04:latest bash
+podman run -it --rm localhost/tmatwood/ubuntu-26.04:latest bash
 
 # Run the command manually
 <command from test> --version
@@ -713,7 +713,7 @@ RUN set -x && <your command>
 
 If you encounter issues not covered here, please check:
 
-1. Existing issues: https://github.com/TMAtwood/wsl-ubuntu-24.04/issues
+1. Existing issues: https://github.com/TMAtwood/wsl-ubuntu-26.04/issues
 2. Create new issue with:
     - Error message (full output)
     - Steps to reproduce

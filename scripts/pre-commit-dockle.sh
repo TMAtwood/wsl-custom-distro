@@ -4,7 +4,7 @@
 
 set -e
 
-IMAGE="localhost/tmatwood/ubuntu-24.04:latest"
+IMAGE="localhost/tmatwood/ubuntu-26.04:latest"
 
 if ! command -v dockle >/dev/null 2>&1; then
     echo "Skipping: dockle not installed (brew install dockle)"

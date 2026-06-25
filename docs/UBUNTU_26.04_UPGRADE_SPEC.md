@@ -128,6 +128,17 @@ and **Azure CLI suite (R7)**; the rest is mechanical (`libicu74→78`,
 | `Dockerfile:107-121`, `235-236` | sudo + sudoers.d rules | **No change required** — sudo-rs enforces the rules correctly. Optional: pin classic via `update-alternatives --set sudo /usr/bin/sudo.ws` (R1) |
 | `Dockerfile:92` (`wslu` in apt list) | `wslu \` in foundation apt install | **Removed from apt list**; added a dedicated RUN that installs the upstream `wslu` `.deb` from the wslutilities PPA pool (R11) |
 
+> **Phase 4 status (✅ DONE 2026-06-25):** Rename sweep complete across all
+> non-Dockerfile files (24.04 → 26.04, Noble Numbat → Resolute Raccoon, all
+> image/distro name refs updated in README, build scripts, CI, docs, pre-commit
+> scripts, copilot instructions, gitleaks config). `tests.yaml`: blobfuse2 test
+> removed (D5 resolved — no 26.04 build available); nuget test updated to
+> `dotnet nuget --help` asserting "NuGet"; OS version test added (`lsb_release
+> -rs` expecting "26.04"); GCC version test added (`gcc -dumpversion` expecting
+> "15"); dig test fixed (bind9 9.20 now outputs to stdout not stderr). Full
+> container-structure-test suite: **244/244 pass**. D1 (straight rename) and D5
+> (blobfuse2 dropped) and D6 (nuget → dotnet nuget) resolved.
+>
 > **Phase 3 status (✅ DONE 2026-06-25):** The **full image** builds end-to-end
 > on 26.04 (`podman build --target final` succeeds; all 6 stages, final stage
 > 34/34 + COMMIT). **No Dockerfile changes were required** — the Homebrew tool
@@ -253,21 +264,17 @@ and audio function, Podman socket + `act` work. Open PR to `main`.
 
 ## 7. Open Decisions
 
-- **D1 — Image/distro naming:** rename to `ubuntu-26.04` (recommended) vs. adopt
-  a version-agnostic name to stop renaming each upgrade.
+- **D1 — Image/distro naming:** ✅ *Resolved (Phase 4)* — straight rename to
+  `ubuntu-26.04` applied across all files.
 - **D2 — Python matrix on 26.04:** ✅ *Resolved by recon* — ship 3.12 + 3.13
   (deadsnakes `resolute`) and 3.14 (main). Open sub-question: keep 3.12 or drop
   to a 3.13/3.14 pair to reduce surface?
 - **D3 — .NET 10:** add `dotnet-sdk-10.0` now, or keep 8/9 only this cycle?
-- **D5 — blobfuse2:** dropped because upstream Azure ships no 24.04+/26.04 `.deb`
-  (the 22.04 build needs `libfuse3.so.3`; 26.04 bumped the soname to `.so.4`).
-  Forcing it risks FUSE ABI breakage. Options: (a) leave dropped and remove its
-  test until Microsoft publishes a 26.04 build (recommended), (b) install the
-  22.04 `.deb` with a `libfuse3.so.3` compat symlink (risky for a FUSE tool).
-- **D6 — nuget CLI:** the standalone `nuget` apt package is gone from 26.04. The
-  replacement is `dotnet nuget`. Options: (a) update the `tests.yaml` nuget test
-  to `dotnet nuget` and drop the standalone command (recommended), (b) add a
-  `/usr/local/bin/nuget` shim that execs `dotnet nuget`.
+- **D5 — blobfuse2:** ✅ *Resolved (Phase 4)* — blobfuse2 test removed from
+  `tests.yaml`. No 26.04 `.deb` available; will revisit when Microsoft publishes
+  a 26.04-compatible build.
+- **D6 — nuget CLI:** ✅ *Resolved (Phase 4)* — `tests.yaml` nuget test updated
+  to invoke `dotnet nuget --help` and assert "NuGet" in output.
 - **D4 — sudo strategy:** ✅ *Resolved by recon* — `sudo-rs` enforces the
   current rules correctly, so the default is acceptable. Optional hardening only:
   pin classic `/usr/bin/sudo.ws` if broader sudoers-grammar compatibility is
