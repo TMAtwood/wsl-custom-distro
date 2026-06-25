@@ -86,6 +86,7 @@ Severities below are **post-verification**.
 | R8 | **Toolchain bumps** (GCC 15.2, glibc 2.43, binutils 2.46) can surface compile/ABI issues in from-source builds (Homebrew bootstrap, `cargo`, CUDA gcc). | Stage 3–5 | 🔎 **BUILD-TIME — Low/Med.** Not probe-able without a full build. Validate in Phase 3. Watch `nvidia-cuda-toolkit-gcc` vs GCC 15. |
 | R9 | **OpenJDK 8/11/17/21/25 co-installability.** | `Dockerfile:659-685`, `tests.yaml:640-653` | ✅ **VERIFIED OK.** All five JDKs have `~26.04` candidates (8u492, 11.0.31, 17.0.19, 21.0.11, 25.0.3). Default 25 unchanged. No edit needed beyond confirming tests. |
 | R10 | **APT 3.2** (probed; release notes said 3.1) now links OpenSSL; output/UX changed. | Throughout | ✅ **LOW.** `apt-get update`/`install`/`add-apt-repository` all worked non-interactively in recon. Spot-check the retry loops in Phase 2. |
+| R11 | **`wslu` removed from the 26.04 archive.** It provides `wslview` (used for `BROWSER=wslview` at `Dockerfile:745`), `wslpath`, `wslsys`. `wsl-setup` and `ubuntu-wsl` remain, but `ubuntu-wsl` no longer pulls `wslu`. *(Discovered during Phase 1 base build, not initial recon.)* | `Dockerfile:92` (foundation apt list), `Dockerfile:745` | ⚠️ **FIXED — Med.** Dropped `wslu` from the apt list; install the upstream `wslu` `.deb` from the wslutilities PPA pool (built for `noble`, runs on `resolute`; deps `bc`/`desktop-file-utils`/`psmisc` are in 26.04 main). The PPA has no `resolute` suite and GitHub ships no `.deb`. **Verified:** base build installs it and `/usr/bin/wslview` resolves. |
 
 ### 3.1 Phase 0 recon evidence (2026-06-25, `podman run ubuntu:26.04`)
 
@@ -124,6 +125,12 @@ and **Azure CLI suite (R7)**; the rest is mechanical (`libicu74→78`,
 | `Dockerfile:595,596,600` | `libicu74`, `liblttng-ust1t64`, `libssl3t64` | **Only `libicu74` → `libicu78`.** `libssl3t64`/`liblttng-ust1t64` unchanged on 26.04 (R3) |
 | `Dockerfile:659-685` | OpenJDK 8/11/17/21/25, default 25 | **No change** — all five confirmed available with `~26.04` builds (R9) |
 | `Dockerfile:107-121`, `235-236` | sudo + sudoers.d rules | **No change required** — sudo-rs enforces the rules correctly. Optional: pin classic via `update-alternatives --set sudo /usr/bin/sudo.ws` (R1) |
+| `Dockerfile:92` (`wslu` in apt list) | `wslu \` in foundation apt install | **Removed from apt list**; added a dedicated RUN that installs the upstream `wslu` `.deb` from the wslutilities PPA pool (R11) |
+
+> **Phase 1 status (✅ DONE 2026-06-25):** `FROM`/labels, HashiCorp `resolute`,
+> `libicu74`→`libicu78`, kubescape-PPA removal, and the wslu fix are committed.
+> The `base` target builds end-to-end on 26.04 (`podman build --target base`
+> succeeds; `wslview` resolves). Stages 2–6 remain (Phases 2–3).
 
 > **Note on comments:** several inline comments reference "Ubuntu 24.04" (e.g.
 > `Dockerfile:511`). Update comment text alongside the code so the rationale

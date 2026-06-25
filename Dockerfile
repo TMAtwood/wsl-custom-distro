@@ -6,13 +6,13 @@ ARG VERSION
 # ║ Contains: ARG/ENV vars, apt packages, user setup, git config script, PPAs, WSL config        ║
 # ╚═══════════════════════════════════════════════════════════════════════════════════════════════╝
 
-FROM ubuntu:24.04 AS base
+FROM ubuntu:26.04 AS base
 
 # Set shell options for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 LABEL maintainer="Tom Atwood<tom@tmatwood.com>"
-LABEL org.opencontainers.image.version=24.04
+LABEL org.opencontainers.image.version=26.04
 LABEL org.opencontainers.image.ref.name=ubuntu
 
 
@@ -89,11 +89,24 @@ RUN apt-get -y update \
       unzip \
       wsl-setup \
       wget \
-      wslu \
       zip \
     && dpkg-reconfigure ca-certificates \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# wslu (provides wslview, wslpath, wslsys, etc.) was dropped from the Ubuntu
+# archive in 26.04. Install the upstream build from the wslutilities PPA pool:
+# it is published for noble but is portable enough to run on resolute (runtime
+# deps bc, desktop-file-utils, psmisc are all in 26.04 main). The .deb filename
+# is resolved dynamically so the version is not pinned here.
+# hadolint ignore=DL4006
+RUN WSLU_BASE="https://ppa.launchpadcontent.net/wslutilities/wslu/ubuntu" \
+    && WSLU_DEB=$(curl -fsSL "${WSLU_BASE}/dists/noble/main/binary-amd64/Packages.gz" | gunzip | awk '/^Filename: .*wslu_/{print $2; exit}') \
+    && curl -fsSL -o /tmp/wslu.deb "${WSLU_BASE}/${WSLU_DEB}" \
+    && apt-get -y update \
+    && apt-get -y install --no-install-recommends /tmp/wslu.deb \
+    && rm -rf /tmp/wslu.deb /var/lib/apt/lists/* \
+    && command -v wslview
 
 
 #  ██  ██       ██████ ██████  ███████  █████  ████████ ███████     ██    ██ ███████ ███████ ██████  ███████
@@ -142,7 +155,6 @@ RUN cp /etc/resolv.conf /etc/resolv.conf.backup 2>/dev/null || true && \
 # hadolint ignore=DL3059,SC2015
 RUN for attempt in 1 2 3; do \
       echo "Attempt $attempt: Adding PPAs..." && \
-      add-apt-repository ppa:kubescape/kubescape -y && \
       add-apt-repository ppa:deadsnakes/ppa -y && \
       add-apt-repository ppa:cappelikan/ppa -y && \
       add-apt-repository ppa:dotnet/backports -y && \
@@ -160,7 +172,7 @@ RUN mv /etc/resolv.conf.backup /etc/resolv.conf 2>/dev/null || true
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp-archive-keyring.gpg \
     && chmod 644 /etc/apt/keyrings/hashicorp-archive-keyring.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com noble main" | tee /etc/apt/sources.list.d/hashicorp.list
+    && echo "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com resolute main" | tee /etc/apt/sources.list.d/hashicorp.list
 
 # Add Antigravity repository
 RUN curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | gpg --dearmor -o /etc/apt/keyrings/antigravity-repo-key.gpg \
@@ -584,7 +596,6 @@ RUN apt-get -y update \
         iputils-ping \
         k6 \
         keychain \
-        kubescape \
         less \
         libasound2-plugins \
         libc6 \
@@ -592,7 +603,7 @@ RUN apt-get -y update \
         libgssapi-krb5-2 \
         libgstreamer1.0-dev \
         libgstreamer-plugins-base1.0-dev \
-        libicu74 \
+        libicu78 \
         liblttng-ust1t64 \
         libpulse0 \
         libpulse-dev \
