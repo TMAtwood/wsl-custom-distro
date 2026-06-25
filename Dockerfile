@@ -416,7 +416,7 @@ RUN apt-get -y update \
       libffi-dev \
       libgdbm-dev \
       liblzma-dev \
-      libncurses5-dev \
+      libncurses-dev \
       libnss3-dev \
       libreadline-dev \
       libsqlite3-dev \
@@ -524,10 +524,13 @@ USER root
 RUN add-apt-repository -y ppa:mozillateam/ppa \
     && printf 'Package: *\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001\n' > /etc/apt/preferences.d/mozilla-firefox
 
-# Added as a workaround for the issue with the latest version of the Azure CLI
-# hadolint ignore=DL4006
-RUN sh -c 'echo "deb http://archive.ubuntu.com/ubuntu jammy main universe" > /etc/apt/sources.list.d/jammy.list' \
-    && curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+# Azure CLI: Microsoft has not published a 26.04 (resolute) apt suite yet, so we
+# pin the repo to the noble suite, which installs cleanly with all dependencies
+# on 26.04. The azure-cli package itself is installed from the main apt list
+# below. This replaces the previous jammy-shim + install-script approach.
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft-azurecli.gpg \
+    && chmod 644 /etc/apt/keyrings/microsoft-azurecli.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft-azurecli.gpg] https://packages.microsoft.com/repos/azure-cli/ noble main" | tee /etc/apt/sources.list.d/azure-cli.list
 
 # Add Google Chrome repository
 # hadolint ignore=DL4006
@@ -540,9 +543,11 @@ RUN wget -q -O - https://packages.microsoft.com/keys/microsoft.asc | gpg --dearm
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-edge-keyring.gpg] https://packages.microsoft.com/repos/edge stable main" | tee /etc/apt/sources.list.d/microsoft-edge.list
 
 # Add k6 load testing tool repository
+# k6 rotated its signing key; fetch it directly from dl.k6.io rather than a
+# keyserver (the old keyserver fingerprint no longer matches the repo signature)
 # hadolint ignore=DL4006
-RUN gpg -k \
-    && gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69 \
+RUN curl -fsSL https://dl.k6.io/key.gpg | gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg \
+    && chmod 644 /usr/share/keyrings/k6-archive-keyring.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | tee /etc/apt/sources.list.d/k6.list
 
 # Install main packages including browsers
@@ -554,7 +559,6 @@ RUN apt-get -y update \
         apparmor-utils \
         audacity \
         azure-cli \
-        blobfuse2 \
         buildah \
         bzip2 \
         cifs-utils \
@@ -564,7 +568,7 @@ RUN apt-get -y update \
         daemonize \
         dbus \
         dbus-x11 \
-        dnsutils \
+        bind9-dnsutils \
         dotnet-sdk-8.0 \
         dotnet-sdk-9.0 \
         entr \
@@ -620,16 +624,15 @@ RUN apt-get -y update \
         ncdu \
         net-tools \
         ninja-build \
-        nuget \
         nvidia-cuda-toolkit \
         nvidia-cuda-toolkit-gcc \
         obs-studio \
-        p7zip-full \
+        7zip \
         packer \
         pavucontrol \
         pkg-config \
-        policykit-1 \
-        powershell \
+        polkitd \
+        pkexec \
         protobuf-compiler \
         pulseaudio \
         pulseaudio-utils \
@@ -722,9 +725,25 @@ RUN for i in 1 2 3; do \
       dotnet tool install -g fake-cli && \
       dotnet tool install -g GitVersion.Tool && \
       dotnet tool install -g paket && \
-      dotnet tool install -g powershell && \
       break || { echo "Attempt $i failed, retrying in 5 seconds..."; sleep 5; } \
     done
+
+# PowerShell (pwsh): not published in the 26.04 apt repo, and the 'powershell'
+# dotnet global tool ships a broken package (missing DotnetToolSettings.xml), so
+# install the official cross-platform binary archive — the method Microsoft
+# documents for distros without a package. Version resolved from the latest
+# GitHub release.
+USER root
+# hadolint ignore=DL4006
+RUN PWSH_URL=$(curl -fsSL https://api.github.com/repos/PowerShell/PowerShell/releases/latest | jq -r '.assets[] | select(.name|test("linux-x64.tar.gz$")) | .browser_download_url') \
+    && curl -fsSL -o /tmp/powershell.tar.gz "${PWSH_URL}" \
+    && mkdir -p /opt/microsoft/powershell/7 \
+    && tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7 \
+    && chmod +x /opt/microsoft/powershell/7/pwsh \
+    && ln -sf /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh \
+    && rm -f /tmp/powershell.tar.gz \
+    && pwsh --version
+USER ${USER}
 
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════════════════╗
