@@ -1246,6 +1246,13 @@ COPY config/home/dev/.asoundrc /home/${USER}/.asoundrc
 RUN chown -R ${USER}:${GROUP} /home/${USER}/.config/pulse \
     && chown ${USER}:${GROUP} /home/${USER}/.asoundrc
 
+# Audio is served by WSLg's PulseAudio server (/mnt/wslg/PulseServer); a local
+# daemon must never spawn. The pulseaudio package enables its user units by
+# preset, and the daemon's O_NOFOLLOW pidfile open collides with WSLg's
+# pre-seeded /run/user/1001/pulse/pid symlink -> ELOOP ("Too many levels of
+# symbolic links") -> crash-loop until start-limit. Mask the units for all users.
+RUN systemctl --global mask pulseaudio.service pulseaudio.socket
+
 # Add audio/video environment variables for WSLg
 RUN echo 'export CLUTTER_BACKEND=wayland' >> /home/${USER}/.bashrc \
     && echo 'export DISPLAY=:0' >> /home/${USER}/.bashrc \

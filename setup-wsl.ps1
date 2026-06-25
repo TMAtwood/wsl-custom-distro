@@ -17,6 +17,20 @@ podman export --output=c:/temp/tmatwood-ubuntu-26.04/tmatwood-ubuntu-26.04.tar t
 podman stop tmatwood-ubuntu-26.04
 wsl.exe --import tmatwood-ubuntu-26.04 "c:/temp/tmatwood-ubuntu-26.04/" "c:/temp/tmatwood-ubuntu-26.04/tmatwood-ubuntu-26.04.tar" --version 2
 wsl --set-default tmatwood-ubuntu-26.04
+
+# Wait for systemd to finish booting before issuing per-user commands.
+# --import does not boot the distro; the first `wsl ... sudo` triggers boot and
+# otherwise races the system manager, printing
+# "Failed to start the systemd user session for 'dev'".
+Write-Host "Waiting for systemd to finish booting."
+$booted = $false
+for ($i = 0; $i -lt 30; $i++) {
+    $state = (wsl -d tmatwood-ubuntu-26.04 -u root --cd / -- systemctl is-system-running 2>$null)
+    if ($state -match 'running|degraded') { $booted = $true; break }
+    Start-Sleep -Seconds 1
+}
+if (-not $booted) { Write-Host "systemd not fully ready after 30s; continuing anyway." }
+
 # Backup wsl.conf
 wsl -d tmatwood-ubuntu-26.04 --cd / sudo cp /etc/wsl.conf /etc/wsl.conf.bak
 
