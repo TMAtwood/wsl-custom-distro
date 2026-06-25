@@ -128,6 +128,16 @@ and **Azure CLI suite (R7)**; the rest is mechanical (`libicu74→78`,
 | `Dockerfile:107-121`, `235-236` | sudo + sudoers.d rules | **No change required** — sudo-rs enforces the rules correctly. Optional: pin classic via `update-alternatives --set sudo /usr/bin/sudo.ws` (R1) |
 | `Dockerfile:92` (`wslu` in apt list) | `wslu \` in foundation apt install | **Removed from apt list**; added a dedicated RUN that installs the upstream `wslu` `.deb` from the wslutilities PPA pool (R11) |
 
+> **Phase 3 status (✅ DONE 2026-06-25):** The **full image** builds end-to-end
+> on 26.04 (`podman build --target final` succeeds; all 6 stages, final stage
+> 34/34 + COMMIT). **No Dockerfile changes were required** — the Homebrew tool
+> installs (≈50 formulae), the GitHub-release tarballs (Flyway/Liquibase/CodeQL),
+> the `antigravity` apt package (1.23.2), and the pip packages on Python 3.14
+> (checkov/detect-secrets/podman-compose/pre-commit/pyright/uv, all cp314 wheels)
+> all build unmodified. Verified in the image: OS = "Ubuntu 26.04 LTS (resolute)",
+> all brew tools, flyway/liquibase/codeql, opentofu (tenv), pwsh 7.6.3. The pip
+> "packaging 23.2 vs wheel" message is a pre-existing non-fatal resolver warning.
+>
 > **Phase 2 status (✅ DONE 2026-06-25):** Stages 2–4 build end-to-end on 26.04
 > (`podman build --target runtimes` succeeds). Verified in the built image:
 > `7z`, `dig`, `nslookup`, `az`, `k6 v2.0.0`, `pwsh 7.6.3`, Python 3.12/3.13/3.14,
