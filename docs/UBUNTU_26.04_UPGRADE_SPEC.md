@@ -2,7 +2,7 @@
 
 - **Jira:** [PLAT-165](https://tmatwood.atlassian.net/browse/PLAT-165)
 - **Branch:** `feature/PLAT-165` (based on `feature/PLAT-2`)
-- **Status:** Draft / Proposed
+- **Status:** In Review — PR open
 - **Author:** Tom Atwood
 - **Date:** 2026-06-25
 
@@ -127,6 +127,14 @@ and **Azure CLI suite (R7)**; the rest is mechanical (`libicu74→78`,
 | `Dockerfile:659-685` | OpenJDK 8/11/17/21/25, default 25 | **No change** — all five confirmed available with `~26.04` builds (R9) |
 | `Dockerfile:107-121`, `235-236` | sudo + sudoers.d rules | **No change required** — sudo-rs enforces the rules correctly. Optional: pin classic via `update-alternatives --set sudo /usr/bin/sudo.ws` (R1) |
 | `Dockerfile:92` (`wslu` in apt list) | `wslu \` in foundation apt install | **Removed from apt list**; added a dedicated RUN that installs the upstream `wslu` `.deb` from the wslutilities PPA pool (R11) |
+
+> **Phase 5 status (✅ DONE 2026-06-25):** Branch `feature/PLAT-165` pushed to
+> `origin` and PR [#3](https://github.com/TMAtwood/wsl-custom-distro/pull/3)
+> opened to `main`. The PR body discloses the stacked `feature/PLAT-2` commit
+> (`8ac3021`) included in the diff. **One manual step remains for the repo
+> owner:** run `setup-wsl.ps1` on the Windows host (after `build.sh`) to import
+> the distro and verify systemd boots, passwordless sudo works, and WSLg GUI +
+> PulseAudio function. That step cannot be automated from CI or WSL.
 
 > **Phase 4 status (✅ DONE 2026-06-25):** Rename sweep complete across all
 > non-Dockerfile files (24.04 → 26.04, Noble Numbat → Resolute Raccoon, all
