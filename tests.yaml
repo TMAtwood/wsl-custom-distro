@@ -77,6 +77,26 @@ commandTests:
     command: "g++"
     args: ["--version"]
     expectedOutput: ["g\\+\\+"]
+  - name: "clang installation"
+    command: "clang"
+    args: ["--version"]
+    expectedOutput: ["clang version"]
+  - name: "gdb installation"
+    command: "gdb"
+    args: ["--version"]
+    expectedOutput: ["GNU gdb"]
+  - name: "lldb installation"
+    command: "lldb"
+    args: ["--version"]
+    expectedOutput: ["lldb version"]
+  - name: "ninja installation"
+    command: "ninja"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "valgrind installation"
+    command: "valgrind"
+    args: ["--version"]
+    expectedOutput: ["valgrind"]
   - name: "gawk installation"
     command: "gawk"
     args: ["--version"]
@@ -314,7 +334,7 @@ commandTests:
   - name: "infracost installation"
     command: "infracost"
     args: ["--version"]
-    expectedOutput: ["Infracost"]
+    expectedOutput: ["infracost version"]
   - name: "packer installation"
     command: "packer"
     args: ["version"]

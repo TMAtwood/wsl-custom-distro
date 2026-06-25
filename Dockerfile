@@ -546,6 +546,7 @@ RUN apt-get -y update \
         buildah \
         bzip2 \
         cifs-utils \
+        clang \
         cmake \
         consul \
         daemonize \
@@ -562,6 +563,7 @@ RUN apt-get -y update \
         g++ \
         gawk \
         gcc \
+        gdb \
         gimp \
         git-flow \
         git-lfs \
@@ -599,11 +601,14 @@ RUN apt-get -y update \
         libstdc++6 \
         libunwind8 \
         libv4l-dev \
+        lldb \
+        make \
         maven \
         microsoft-edge-stable \
         nano \
         ncdu \
         net-tools \
+        ninja-build \
         nuget \
         nvidia-cuda-toolkit \
         nvidia-cuda-toolkit-gcc \
@@ -630,6 +635,7 @@ RUN apt-get -y update \
         uuid-runtime \
         v4l-utils \
         vault \
+        valgrind \
         vlc \
         x11-apps \
         yamllint \
@@ -799,6 +805,8 @@ RUN for attempt in 1 2 3; do \
       eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
       brew tap spring-io/tap && \
       brew tap tofuutils/tap && \
+      brew tap terraform-linters/tap && \
+      brew trust spring-io/tap tofuutils/tap terraform-linters/tap && \
       echo "Successfully added all taps" && \
       break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
     done
@@ -881,7 +889,7 @@ RUN for attempt in 1 2 3; do \
       brew install terraform-docs && \
       brew install terraformer && \
       brew install terrascan && \
-      brew install tflint && \
+      brew install terraform-linters/tap/tflint && \
       brew install tfsec && \
       brew install tfupdate && \
       echo "Successfully installed all infrastructure tools" && \

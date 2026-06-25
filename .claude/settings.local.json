@@ -43,7 +43,10 @@
       "Bash(timeout 120 bash -c 'cd /c/Users/ThomasMAtwood/repos/wsl-custom-distro && pre-commit run check-executables-have-shebangs --all-files 2>&1':*)",
       "Bash(./build.sh:*)",
       "Bash(python3:*)",
-      "Bash(SKIP=trufflehog pre-commit run:*)"
+      "Bash(SKIP=trufflehog pre-commit run:*)",
+      "WebFetch(domain:launchpad.net)",
+      "PowerShell(podman images *)",
+      "PowerShell(podman run *)"
     ],
     "deny": [],
     "ask": []
