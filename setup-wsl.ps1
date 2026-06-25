@@ -18,10 +18,12 @@ podman stop tmatwood-ubuntu-26.04
 wsl.exe --import tmatwood-ubuntu-26.04 "c:/temp/tmatwood-ubuntu-26.04/" "c:/temp/tmatwood-ubuntu-26.04/tmatwood-ubuntu-26.04.tar" --version 2
 wsl --set-default tmatwood-ubuntu-26.04
 
-# Wait for systemd to finish booting before issuing per-user commands.
-# --import does not boot the distro; the first `wsl ... sudo` triggers boot and
-# otherwise races the system manager, printing
-# "Failed to start the systemd user session for 'dev'".
+# Wait for systemd to finish booting before issuing per-user `sudo` commands so
+# they run against a fully-booted system manager (avoids racing daemon-reexec /
+# service restarts below). NOTE: the one-time "Failed to start the systemd user
+# session for 'dev'" printed on the very first cold-boot entry is a benign WSL
+# artifact -- the journal confirms user@1001 opens cleanly and it does not recur
+# on subsequent boots.
 Write-Host "Waiting for systemd to finish booting."
 $booted = $false
 for ($i = 0; $i -lt 30; $i++) {
