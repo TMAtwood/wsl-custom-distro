@@ -771,7 +771,6 @@ RUN echo 'alias d="docker"' >> /home/${USER}/.bashrc \
     && echo 'alias pc="podman compose"' >> /home/${USER}/.bashrc \
     && echo 'alias podman-compose="podman compose"' >> /home/${USER}/.bashrc \
     && echo 'alias tf="tofu"' >> /home/${USER}/.bashrc \
-    && echo 'eval $(ssh-agent)' >> /home/${USER}/.bashrc \
     && echo 'export BROWSER=wslview' >> /home/${USER}/.bashrc \
     && echo 'export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock' >> /home/${USER}/.bashrc \
     && echo 'export ENABLE_LSP_TOOLS=1' >> /home/${USER}/.bashrc \
@@ -1161,8 +1160,8 @@ RUN echo "" >> /home/${USER}/.bashrc \
     && echo '    if [ "$windows_user" != "Public" ] && [ "$windows_user" != "All Users" ] && [ -d "$windows_ssh_dir" ] && [ -n "$(ls -A "$windows_ssh_dir" 2>/dev/null)" ]; then' >> /home/${USER}/.bashrc \
     && echo '      mkdir -p /home/${USER}/.ssh' >> /home/${USER}/.bashrc \
     && echo '      cp "$windows_ssh_dir"/* /home/${USER}/.ssh/ 2>/dev/null' >> /home/${USER}/.bashrc \
-    && echo '      chmod +x /home/${USER}/.ssh/* 2>/dev/null' >> /home/${USER}/.bashrc \
-    && echo '      chmod 600 /home/${USER}/.ssh/* 2>/dev/null' >> /home/${USER}/.bashrc \
+    && echo '      find /home/${USER}/.ssh -type f -exec chmod 600 {} + 2>/dev/null' >> /home/${USER}/.bashrc \
+    && echo '      find /home/${USER}/.ssh -type d -exec chmod 700 {} + 2>/dev/null' >> /home/${USER}/.bashrc \
     && echo '      chown -R ${USER}:${GROUP} /home/${USER}/.ssh 2>/dev/null' >> /home/${USER}/.bashrc \
     && echo '      echo "SSH keys migrated from Windows user: $windows_user"' >> /home/${USER}/.bashrc \
     && echo '      break' >> /home/${USER}/.bashrc \
