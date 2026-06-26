@@ -46,7 +46,14 @@
       "Bash(SKIP=trufflehog pre-commit run:*)",
       "WebFetch(domain:launchpad.net)",
       "PowerShell(podman images *)",
-      "PowerShell(podman run *)"
+      "PowerShell(podman run *)",
+      "mcp__claude_ai_Atlassian_Rovo__getAccessibleAtlassianResources",
+      "mcp__claude_ai_Atlassian_Rovo__getVisibleJiraProjects",
+      "mcp__claude_ai_Atlassian_Rovo__createJiraIssue",
+      "Bash(wsl.exe -l -v)",
+      "Bash(iconv -f UTF-16LE -t UTF-8)",
+      "Bash(wsl.exe -d tmatwood-ubuntu-26.04 -u root --cd / -- systemctl status user@1001.service --no-pager)",
+      "Bash(wsl.exe -d tmatwood-ubuntu-26.04 -u root --cd / -- journalctl -u user@1001.service --no-pager -n 60)"
     ],
     "deny": [],
     "ask": []
