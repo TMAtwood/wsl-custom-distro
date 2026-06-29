@@ -850,6 +850,10 @@ commandTests:
     command: "ip"
     args: ["-Version"]
     expectedOutput: ["ip utility"]
+  - name: "nftables installation"
+    command: "nft"
+    args: ["--version"]
+    expectedOutput: ["nftables"]
   - name: "ping installation"
     command: "which"
     args: ["ping"]

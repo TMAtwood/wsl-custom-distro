@@ -30,12 +30,17 @@ param(
     [string]$ImageName = $env:IMAGE_NAME,
 
     [Parameter(Mandatory=$false)]
-    [string]$ConfigFile = "tests.yaml"
+    [string]$ConfigFile = $env:CONFIG_FILE
 )
 
 # Set default image name if not provided
 if ([string]::IsNullOrEmpty($ImageName)) {
     $ImageName = "localhost/tmatwood/ubuntu-26.04:latest"
+}
+
+# Set default config file if not provided
+if ([string]::IsNullOrEmpty($ConfigFile)) {
+    $ConfigFile = "tests.yaml"
 }
 
 Write-Host "Running Container Structure Tests..." -ForegroundColor Cyan

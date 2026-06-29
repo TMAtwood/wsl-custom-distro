@@ -96,9 +96,16 @@ main() {
   IMAGE_NAME_AND_VERSION="${IMAGE_NAME}:${VERSION}"
   IMAGE_NAME_LATEST="${IMAGE_NAME}:latest"
 
+  # Runner image (tandem-built from the `runner` Dockerfile stage; agent baked in)
+  RUNNER_IMAGE_NAME="localhost/tmatwood/ubuntu-26.04-runner"
+  RUNNER_IMAGE_AND_VERSION="${RUNNER_IMAGE_NAME}:${VERSION}"
+  RUNNER_IMAGE_CURRENT="${RUNNER_IMAGE_NAME}:current"
+
   write_info "Image name: $IMAGE_NAME"
   write_info "Version tag: $IMAGE_NAME_AND_VERSION"
   write_info "Latest tag: $IMAGE_NAME_LATEST"
+  write_info "Runner version tag: $RUNNER_IMAGE_AND_VERSION"
+  write_info "Runner current tag: $RUNNER_IMAGE_CURRENT"
 
   # ========================================================================
   # Check Podman availability
@@ -145,6 +152,7 @@ main() {
     --dns=1.1.1.1 \
     --dns=8.8.8.8 \
     --platform linux/amd64 \
+    --target final \
     --build-arg BUILD_DATE="$BUILD_DATE" \
     -t "$IMAGE_NAME_AND_VERSION" \
     .; then
@@ -171,6 +179,36 @@ main() {
   write_success "Image tagged as latest"
 
   # ========================================================================
+  # Build the runner image (tandem `runner` stage)
+  # ========================================================================
+  # Reuses all of `final`'s cached layers and adds only the agent layer, so
+  # this is cheap. The pinned RUNNER_VERSION/RUNNER_SHA256 live as ARG
+  # defaults in the Dockerfile's `runner` stage (single source of truth).
+  write_info "\nBuilding runner image (--target runner)..."
+
+  if ! $PODMAN_CMD build \
+    --format docker \
+    --dns=1.1.1.1 \
+    --dns=8.8.8.8 \
+    --platform linux/amd64 \
+    --target runner \
+    --build-arg BUILD_DATE="$BUILD_DATE" \
+    -t "$RUNNER_IMAGE_AND_VERSION" \
+    .; then
+    write_error "Runner image build failed"
+    exit 1
+  fi
+
+  write_success "Runner image built: $RUNNER_IMAGE_AND_VERSION"
+
+  if ! $PODMAN_CMD tag "$RUNNER_IMAGE_AND_VERSION" "$RUNNER_IMAGE_CURRENT"; then
+    write_error "Failed to tag runner image as current"
+    exit 1
+  fi
+
+  write_success "Runner image tagged as current"
+
+  # ========================================================================
   # Build Summary
   # ========================================================================
   echo -e "\n${COLOR_SUCCESS}========================================"
@@ -180,6 +218,8 @@ main() {
   echo "  Build Date: ${BUILD_DATE}"
   echo "  Image: ${IMAGE_NAME_AND_VERSION}"
   echo "  Latest: ${IMAGE_NAME_LATEST}"
+  echo "  Runner: ${RUNNER_IMAGE_AND_VERSION}"
+  echo "  Runner (current): ${RUNNER_IMAGE_CURRENT}"
   echo "  Duration: ${BUILD_DURATION_DECIMAL} minutes"
   echo -e "========================================${COLOR_RESET}\n"
 
@@ -188,6 +228,7 @@ main() {
   # ========================================================================
   write_info "Image information:"
   $PODMAN_CMD images "$IMAGE_NAME"
+  $PODMAN_CMD images "$RUNNER_IMAGE_NAME"
 
   exit 0
 }

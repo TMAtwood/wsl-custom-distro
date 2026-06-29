@@ -74,8 +74,8 @@ completed on 2026-06-25** against a live `ubuntu:26.04` container (podman) — t
 "Status" column records the verified outcome and §3.1 has the raw evidence.
 Severities below are **post-verification**.
 
-| # | Risk | Where | Severity | Status / Mitigation |
-| --- | --- | --- | --- | --- |
+| # | Risk | Where | Status / Mitigation |
+| --- | --- | --- | --- |
 | R1 | **`sudo-rs` is the new default sudo.** The base `ubuntu:26.04` image ships *no* sudo; installing the `sudo` package lands the classic binary as `/usr/bin/sudo.ws` **and** pulls `sudo-rs`, which wins the `update-alternatives` selection for `/usr/bin/sudo`. | `Dockerfile:107-121`, `Dockerfile:235-236` | ✅ **VERIFIED OK — Low.** sudo-rs 0.2.13 correctly enforces both `NOPASSWD:ALL` and per-command allow-lists (granted cmd passes, non-granted cmd blocked). The image's sudoers usage works as-is. **Optional hardening:** if you want classic sudo for maximum sudoers-grammar compatibility, add `update-alternatives --set sudo /usr/bin/sudo.ws`. Add a `sudo -n true` structure test regardless. |
 | R2 | **Third-party PPAs may not publish for `resolute`.** | `Dockerfile:145-148`, `Dockerfile:512` | ⚠️ **MOSTLY OK — one gap.** `deadsnakes` ✅, `cappelikan` ✅, `dotnet/backports` ✅, `mozillateam` ✅ all publish `resolute`. **`kubescape` ❌ 404 on `resolute`** (noble exists). Mitigation: pin the kubescape PPA to the `noble` suite as a documented fallback, or install kubescape via the Homebrew formula already used elsewhere (`brew install kubescape` appears at `Dockerfile:852`) and drop the apt PPA. |
 | R3 | **`t64` ABI library pins.** | `Dockerfile:595,596,600` | ⚠️ **ONE CHANGE.** `libssl3t64` (3.5.5) and `liblttng-ust1t64` (2.14.0) are **unchanged** — still present with the `t64` suffix on 26.04. Only **`libicu74` → `libicu78`** needs updating (ICU 78 is the 26.04 runtime). |
@@ -135,7 +135,7 @@ and **Azure CLI suite (R7)**; the rest is mechanical (`libicu74→78`,
 > owner:** run `setup-wsl.ps1` on the Windows host (after `build.sh`) to import
 > the distro and verify systemd boots, passwordless sudo works, and WSLg GUI +
 > PulseAudio function. That step cannot be automated from CI or WSL.
-
+>
 > **Phase 4 status (✅ DONE 2026-06-25):** Rename sweep complete across all
 > non-Dockerfile files (24.04 → 26.04, Noble Numbat → Resolute Raccoon, all
 > image/distro name refs updated in README, build scripts, CI, docs, pre-commit
@@ -168,7 +168,7 @@ and **Azure CLI suite (R7)**; the rest is mechanical (`libicu74→78`,
 > `libicu74`→`libicu78`, kubescape-PPA removal, and the wslu fix are committed.
 > The `base` target builds end-to-end on 26.04 (`podman build --target base`
 > succeeds; `wslview` resolves). Stages 2–6 remain (Phases 2–3).
-
+>
 > **Note on comments:** several inline comments reference "Ubuntu 24.04" (e.g.
 > `Dockerfile:511`). Update comment text alongside the code so the rationale
 > stays accurate.

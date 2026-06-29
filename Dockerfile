@@ -74,6 +74,7 @@ RUN apt-get -y update \
       libxmu-dev \
       lsb-release \
       make \
+      nftables \
       slirp4netns \
       software-properties-common \
       systemd \
@@ -528,6 +529,8 @@ RUN add-apt-repository -y ppa:mozillateam/ppa \
 # pin the repo to the noble suite, which installs cleanly with all dependencies
 # on 26.04. The azure-cli package itself is installed from the main apt list
 # below. This replaces the previous jammy-shim + install-script approach.
+# pipefail is set via SHELL in the base stage and inherited here; DL4006 is a cross-FROM false positive.
+# hadolint ignore=DL4006
 RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft-azurecli.gpg \
     && chmod 644 /etc/apt/keyrings/microsoft-azurecli.gpg \
     && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft-azurecli.gpg] https://packages.microsoft.com/repos/azure-cli/ noble main" | tee /etc/apt/sources.list.d/azure-cli.list
@@ -623,6 +626,7 @@ RUN apt-get -y update \
         nano \
         ncdu \
         net-tools \
+        nftables \
         ninja-build \
         nvidia-cuda-toolkit \
         nvidia-cuda-toolkit-gcc \
@@ -1298,3 +1302,51 @@ USER ${USER}
 WORKDIR /home/${USER}
 
 ARG BUILD_DATE
+
+
+# ╔═══════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ STAGE 7: RUNNER                                                                                ║
+# ║ Purpose: GitHub Actions self-hosted runner image (tandem-built from the distro)               ║
+# ║ Contains: the actions/runner agent baked in, a JIT entrypoint; runs the agent (NOT systemd)   ║
+# ╚═══════════════════════════════════════════════════════════════════════════════════════════════╝
+
+FROM final AS runner
+
+# Pin the agent release and its OFFICIAL linux-x64 SHA-256 (from the actions/runner release notes).
+# Bump both together; the build fails fast on any checksum mismatch.
+ARG RUNNER_VERSION=2.335.1
+ARG RUNNER_SHA256=4ef2f25285f0ae4477f1fe1e346db76d2f3ebf03824e2ddd1973a2819bf6c8cf
+
+USER root
+
+# libicu is a .NET dependency already installed in the runtimes stage, so it is normally present.
+# This is a root-cause safety net: only install if it is genuinely missing, never blindly.
+# pipefail is set via SHELL in the base stage and inherited here; DL4006 is a cross-FROM false positive.
+# hadolint ignore=DL3008,DL4006
+RUN if ! ldconfig -p | grep -q 'libicu'; then \
+      echo "libicu missing — installing for the runner agent" \
+      && apt-get -y update \
+      && apt-get -y install --no-install-recommends libicu-dev \
+      && rm -rf /var/lib/apt/lists/*; \
+    else \
+      echo "libicu already present (provided by the .NET runtime); skipping install"; \
+    fi
+
+# Download, checksum-verify, and extract the agent into /opt/actions-runner; hand it to `dev`.
+WORKDIR /opt/actions-runner
+# hadolint ignore=DL4006
+RUN curl -fsSL -o runner.tar.gz \
+      "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    && echo "${RUNNER_SHA256}  runner.tar.gz" | sha256sum -c - \
+    && tar xzf runner.tar.gz \
+    && rm runner.tar.gz \
+    && chown -R ${USER}:${GROUP} /opt/actions-runner
+
+# Baked JIT entrypoint (config lives under config/, per repo convention — not printf'd here).
+COPY --chown=${USER}:${GROUP} config/opt/actions-runner/entrypoint.sh /opt/actions-runner/entrypoint.sh
+RUN chmod +x /opt/actions-runner/entrypoint.sh
+
+# Run the agent as `dev`. PID 1 is the agent, NOT systemd: the units inherited from `final`
+# (clamonacc, wsl-vpnkit, make-root-shared) never start in an ephemeral CI container by design.
+USER ${USER}
+ENTRYPOINT ["/opt/actions-runner/entrypoint.sh"]
