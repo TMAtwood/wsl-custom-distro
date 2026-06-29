@@ -17,7 +17,7 @@ permissions:
 
 env:
   IMAGE_REGISTRY: localhost/tmatwood
-  IMAGE_NAME: wsl-ubuntu-24.04
+  IMAGE_NAME: wsl-ubuntu-26.04
   VERSION: 0.0.0-dev
 
 jobs:

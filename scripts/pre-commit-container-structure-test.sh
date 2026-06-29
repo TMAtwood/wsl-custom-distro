@@ -4,7 +4,7 @@
 
 set -e
 
-IMAGE="localhost/tmatwood/ubuntu-24.04:latest"
+IMAGE="localhost/tmatwood/ubuntu-26.04:latest"
 CONFIG="tests.yaml"
 
 if ! command -v container-structure-test >/dev/null 2>&1; then

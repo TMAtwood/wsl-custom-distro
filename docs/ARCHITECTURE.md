@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-This document describes the system architecture, design decisions, and organization of the WSL Ubuntu 24.04 Development Environment.
+This document describes the system architecture, design decisions, and organization of the WSL Ubuntu 26.04 Development Environment.
 
 ---
 
@@ -22,7 +22,7 @@ This document describes the system architecture, design decisions, and organizat
 
 ### Base Image
 
-- **Base**: Ubuntu 24.04 LTS (Noble Numbat)
+- **Base**: Ubuntu 26.04 LTS (Resolute Raccoon)
 - **Purpose**: Multi-language development environment optimized for WSL2
 - **Design Goal**: Comprehensive tooling for modern software development workflows
 
@@ -486,7 +486,7 @@ See [Dockerfile:355-379](../Dockerfile#L355-L379) for antivirus configuration.
 #### build.ps1 (PowerShell - Podman)
 
 - **Platform**: Windows with Podman Desktop
-- **Target**: `localhost/tmatwood/ubuntu-24.04:latest`
+- **Target**: `localhost/tmatwood/ubuntu-26.04:latest`
 - **Architecture**: linux/amd64
 - **Features**:
   - GitVersion integration with fallback
@@ -499,7 +499,7 @@ See [build.ps1](../build.ps1) for implementation.
 #### build-docker.sh (Bash - Docker)
 
 - **Platform**: Linux/macOS with Docker
-- **Target**: `docker.io/tmatwood/ubuntu-24.04:latest`
+- **Target**: `docker.io/tmatwood/ubuntu-26.04:latest`
 - **Architecture**: Multi-arch (linux/amd64, linux/arm64)
 - **Features**:
   - Docker buildx multi-platform builds

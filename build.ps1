@@ -1,5 +1,5 @@
 # ============================================================================
-# Build Script for WSL Ubuntu 24.04 Development Environment
+# Build Script for WSL Ubuntu 26.04 Development Environment
 # ============================================================================
 # This script builds the Docker/Podman image with proper error handling
 # and version management using GitVersion for semantic versioning.
@@ -91,7 +91,7 @@ function Get-BuildVersion {
 
 try {
     Write-ColorOutput "`n========================================" $ColorInfo
-    Write-ColorOutput "  WSL Ubuntu 24.04 Image Build" $ColorInfo
+    Write-ColorOutput "  WSL Ubuntu 26.04 Image Build" $ColorInfo
     Write-ColorOutput "========================================`n" $ColorInfo
 
     # Get version
@@ -104,13 +104,20 @@ try {
     Write-InfoMsg "Build date: $BUILD_DATE"
 
     # Define image names
-    $IMAGE_NAME = "localhost/tmatwood/ubuntu-24.04"
+    $IMAGE_NAME = "localhost/tmatwood/ubuntu-26.04"
     $IMAGE_NAME_AND_VERSION = "${IMAGE_NAME}:${VERSION}"
     $IMAGE_NAME_LATEST = "${IMAGE_NAME}:latest"
+
+    # Runner image (tandem-built from the `runner` Dockerfile stage; agent baked in)
+    $RUNNER_IMAGE_NAME = "localhost/tmatwood/ubuntu-26.04-runner"
+    $RUNNER_IMAGE_AND_VERSION = "${RUNNER_IMAGE_NAME}:${VERSION}"
+    $RUNNER_IMAGE_CURRENT = "${RUNNER_IMAGE_NAME}:current"
 
     Write-InfoMsg "Image name: $IMAGE_NAME"
     Write-InfoMsg "Version tag: $IMAGE_NAME_AND_VERSION"
     Write-InfoMsg "Latest tag: $IMAGE_NAME_LATEST"
+    Write-InfoMsg "Runner version tag: $RUNNER_IMAGE_AND_VERSION"
+    Write-InfoMsg "Runner current tag: $RUNNER_IMAGE_CURRENT"
 
     # ========================================================================
     # Check Podman availability
@@ -153,6 +160,7 @@ try {
         --dns=1.1.1.1 `
         --dns=8.8.8.8 `
         --platform linux/amd64 `
+        --target final `
         --build-arg BUILD_DATE="$BUILD_DATE" `
         -t $IMAGE_NAME_AND_VERSION `
         .
@@ -178,6 +186,38 @@ try {
     Write-Success "Image tagged as latest"
 
     # ========================================================================
+    # Build the runner image (tandem `runner` stage)
+    # ========================================================================
+    # Reuses all of `final`'s cached layers and adds only the agent layer, so
+    # this is cheap. The pinned RUNNER_VERSION/RUNNER_SHA256 live as ARG
+    # defaults in the Dockerfile's `runner` stage (single source of truth).
+    Write-InfoMsg "`nBuilding runner image (--target runner)..."
+
+    podman build `
+        --format docker `
+        --dns=1.1.1.1 `
+        --dns=8.8.8.8 `
+        --platform linux/amd64 `
+        --target runner `
+        --build-arg BUILD_DATE="$BUILD_DATE" `
+        -t $RUNNER_IMAGE_AND_VERSION `
+        .
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Runner image build failed with exit code $LASTEXITCODE"
+    }
+
+    Write-Success "Runner image built: $RUNNER_IMAGE_AND_VERSION"
+
+    podman tag $RUNNER_IMAGE_AND_VERSION $RUNNER_IMAGE_CURRENT
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to tag runner image as current (exit code $LASTEXITCODE)"
+    }
+
+    Write-Success "Runner image tagged as current"
+
+    # ========================================================================
     # Build Summary
     # ========================================================================
     Write-ColorOutput "`n========================================" $ColorSuccess
@@ -187,6 +227,8 @@ try {
     Write-ColorOutput "  Build Date: $BUILD_DATE" $ColorInfo
     Write-ColorOutput "  Image: $IMAGE_NAME_AND_VERSION" $ColorInfo
     Write-ColorOutput "  Latest: $IMAGE_NAME_LATEST" $ColorInfo
+    Write-ColorOutput "  Runner: $RUNNER_IMAGE_AND_VERSION" $ColorInfo
+    Write-ColorOutput "  Runner (current): $RUNNER_IMAGE_CURRENT" $ColorInfo
     Write-ColorOutput ("  Duration: {0:F2} minutes" -f $buildDuration.TotalMinutes) $ColorInfo
     Write-ColorOutput "========================================`n" $ColorSuccess
 
@@ -195,6 +237,7 @@ try {
     # ========================================================================
     Write-InfoMsg "Image information:"
     podman images $IMAGE_NAME
+    podman images $RUNNER_IMAGE_NAME
 
     exit 0
 

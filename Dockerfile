@@ -6,13 +6,13 @@ ARG VERSION
 # ║ Contains: ARG/ENV vars, apt packages, user setup, git config script, PPAs, WSL config        ║
 # ╚═══════════════════════════════════════════════════════════════════════════════════════════════╝
 
-FROM ubuntu:24.04 AS base
+FROM ubuntu:26.04 AS base
 
 # Set shell options for better error handling
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 LABEL maintainer="Tom Atwood<tom@tmatwood.com>"
-LABEL org.opencontainers.image.version=24.04
+LABEL org.opencontainers.image.version=26.04
 LABEL org.opencontainers.image.ref.name=ubuntu
 
 
@@ -74,6 +74,7 @@ RUN apt-get -y update \
       libxmu-dev \
       lsb-release \
       make \
+      nftables \
       slirp4netns \
       software-properties-common \
       systemd \
@@ -89,11 +90,24 @@ RUN apt-get -y update \
       unzip \
       wsl-setup \
       wget \
-      wslu \
       zip \
     && dpkg-reconfigure ca-certificates \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# wslu (provides wslview, wslpath, wslsys, etc.) was dropped from the Ubuntu
+# archive in 26.04. Install the upstream build from the wslutilities PPA pool:
+# it is published for noble but is portable enough to run on resolute (runtime
+# deps bc, desktop-file-utils, psmisc are all in 26.04 main). The .deb filename
+# is resolved dynamically so the version is not pinned here.
+# hadolint ignore=DL4006
+RUN WSLU_BASE="https://ppa.launchpadcontent.net/wslutilities/wslu/ubuntu" \
+    && WSLU_DEB=$(curl -fsSL "${WSLU_BASE}/dists/noble/main/binary-amd64/Packages.gz" | gunzip | awk '/^Filename: .*wslu_/{print $2; exit}') \
+    && curl -fsSL -o /tmp/wslu.deb "${WSLU_BASE}/${WSLU_DEB}" \
+    && apt-get -y update \
+    && apt-get -y install --no-install-recommends /tmp/wslu.deb \
+    && rm -rf /tmp/wslu.deb /var/lib/apt/lists/* \
+    && command -v wslview
 
 
 #  ██  ██       ██████ ██████  ███████  █████  ████████ ███████     ██    ██ ███████ ███████ ██████  ███████
@@ -136,13 +150,12 @@ RUN chmod +x /usr/local/bin/setup-git-config.sh
 # Backup existing resolv.conf and configure reliable DNS servers
 # hadolint ignore=DL3059
 RUN cp /etc/resolv.conf /etc/resolv.conf.backup 2>/dev/null || true && \
-    printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf
+    { printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf 2>/dev/null || true; }
 
 # Add PPAs with retry logic and network error handling
 # hadolint ignore=DL3059,SC2015
 RUN for attempt in 1 2 3; do \
       echo "Attempt $attempt: Adding PPAs..." && \
-      add-apt-repository ppa:kubescape/kubescape -y && \
       add-apt-repository ppa:deadsnakes/ppa -y && \
       add-apt-repository ppa:cappelikan/ppa -y && \
       add-apt-repository ppa:dotnet/backports -y && \
@@ -160,7 +173,7 @@ RUN mv /etc/resolv.conf.backup /etc/resolv.conf 2>/dev/null || true
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp-archive-keyring.gpg \
     && chmod 644 /etc/apt/keyrings/hashicorp-archive-keyring.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com noble main" | tee /etc/apt/sources.list.d/hashicorp.list
+    && echo "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com resolute main" | tee /etc/apt/sources.list.d/hashicorp.list
 
 # Add Antigravity repository
 RUN curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | gpg --dearmor -o /etc/apt/keyrings/antigravity-repo-key.gpg \
@@ -190,8 +203,8 @@ COPY config/etc/wsl.conf /etc/wsl.conf
 # Configure static DNS since generateResolvConf=false in wsl.conf
 # Using Cloudflare (1.1.1.1) and Google (8.8.8.8) public DNS servers
 # Note: resolv.conf will be protected by generateResolvConf=false in wsl.conf
-RUN printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
-    && chmod 644 /etc/resolv.conf
+RUN { printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
+    && chmod 644 /etc/resolv.conf; } 2>/dev/null || true
 
 # Create network fix script for WSL2/Tailscale compatibility
 # This script fixes both DNS and default route issues common with Tailscale VPN
@@ -404,7 +417,7 @@ RUN apt-get -y update \
       libffi-dev \
       libgdbm-dev \
       liblzma-dev \
-      libncurses5-dev \
+      libncurses-dev \
       libnss3-dev \
       libreadline-dev \
       libsqlite3-dev \
@@ -512,10 +525,15 @@ USER root
 RUN add-apt-repository -y ppa:mozillateam/ppa \
     && printf 'Package: *\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001\n' > /etc/apt/preferences.d/mozilla-firefox
 
-# Added as a workaround for the issue with the latest version of the Azure CLI
+# Azure CLI: Microsoft has not published a 26.04 (resolute) apt suite yet, so we
+# pin the repo to the noble suite, which installs cleanly with all dependencies
+# on 26.04. The azure-cli package itself is installed from the main apt list
+# below. This replaces the previous jammy-shim + install-script approach.
+# pipefail is set via SHELL in the base stage and inherited here; DL4006 is a cross-FROM false positive.
 # hadolint ignore=DL4006
-RUN sh -c 'echo "deb http://archive.ubuntu.com/ubuntu jammy main universe" > /etc/apt/sources.list.d/jammy.list' \
-    && curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft-azurecli.gpg \
+    && chmod 644 /etc/apt/keyrings/microsoft-azurecli.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft-azurecli.gpg] https://packages.microsoft.com/repos/azure-cli/ noble main" | tee /etc/apt/sources.list.d/azure-cli.list
 
 # Add Google Chrome repository
 # hadolint ignore=DL4006
@@ -528,9 +546,11 @@ RUN wget -q -O - https://packages.microsoft.com/keys/microsoft.asc | gpg --dearm
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-edge-keyring.gpg] https://packages.microsoft.com/repos/edge stable main" | tee /etc/apt/sources.list.d/microsoft-edge.list
 
 # Add k6 load testing tool repository
+# k6 rotated its signing key; fetch it directly from dl.k6.io rather than a
+# keyserver (the old keyserver fingerprint no longer matches the repo signature)
 # hadolint ignore=DL4006
-RUN gpg -k \
-    && gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69 \
+RUN curl -fsSL https://dl.k6.io/key.gpg | gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg \
+    && chmod 644 /usr/share/keyrings/k6-archive-keyring.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | tee /etc/apt/sources.list.d/k6.list
 
 # Install main packages including browsers
@@ -542,16 +562,16 @@ RUN apt-get -y update \
         apparmor-utils \
         audacity \
         azure-cli \
-        blobfuse2 \
         buildah \
         bzip2 \
         cifs-utils \
+        clang \
         cmake \
         consul \
         daemonize \
         dbus \
         dbus-x11 \
-        dnsutils \
+        bind9-dnsutils \
         dotnet-sdk-8.0 \
         dotnet-sdk-9.0 \
         entr \
@@ -562,6 +582,7 @@ RUN apt-get -y update \
         g++ \
         gawk \
         gcc \
+        gdb \
         gimp \
         git-flow \
         git-lfs \
@@ -582,7 +603,6 @@ RUN apt-get -y update \
         iputils-ping \
         k6 \
         keychain \
-        kubescape \
         less \
         libasound2-plugins \
         libc6 \
@@ -590,7 +610,7 @@ RUN apt-get -y update \
         libgssapi-krb5-2 \
         libgstreamer1.0-dev \
         libgstreamer-plugins-base1.0-dev \
-        libicu74 \
+        libicu78 \
         liblttng-ust1t64 \
         libpulse0 \
         libpulse-dev \
@@ -599,21 +619,24 @@ RUN apt-get -y update \
         libstdc++6 \
         libunwind8 \
         libv4l-dev \
+        lldb \
+        make \
         maven \
         microsoft-edge-stable \
         nano \
         ncdu \
         net-tools \
-        nuget \
+        nftables \
+        ninja-build \
         nvidia-cuda-toolkit \
         nvidia-cuda-toolkit-gcc \
         obs-studio \
-        p7zip-full \
+        7zip \
         packer \
         pavucontrol \
         pkg-config \
-        policykit-1 \
-        powershell \
+        polkitd \
+        pkexec \
         protobuf-compiler \
         pulseaudio \
         pulseaudio-utils \
@@ -630,6 +653,7 @@ RUN apt-get -y update \
         uuid-runtime \
         v4l-utils \
         vault \
+        valgrind \
         vlc \
         x11-apps \
         yamllint \
@@ -705,9 +729,25 @@ RUN for i in 1 2 3; do \
       dotnet tool install -g fake-cli && \
       dotnet tool install -g GitVersion.Tool && \
       dotnet tool install -g paket && \
-      dotnet tool install -g powershell && \
       break || { echo "Attempt $i failed, retrying in 5 seconds..."; sleep 5; } \
     done
+
+# PowerShell (pwsh): not published in the 26.04 apt repo, and the 'powershell'
+# dotnet global tool ships a broken package (missing DotnetToolSettings.xml), so
+# install the official cross-platform binary archive — the method Microsoft
+# documents for distros without a package. Version resolved from the latest
+# GitHub release.
+USER root
+# hadolint ignore=DL4006
+RUN PWSH_URL=$(curl -fsSL https://api.github.com/repos/PowerShell/PowerShell/releases/latest | jq -r '.assets[] | select(.name|test("linux-x64.tar.gz$")) | .browser_download_url') \
+    && curl -fsSL -o /tmp/powershell.tar.gz "${PWSH_URL}" \
+    && mkdir -p /opt/microsoft/powershell/7 \
+    && tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7 \
+    && chmod +x /opt/microsoft/powershell/7/pwsh \
+    && ln -sf /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh \
+    && rm -f /tmp/powershell.tar.gz \
+    && pwsh --version
+USER ${USER}
 
 
 # ╔═══════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -735,7 +775,6 @@ RUN echo 'alias d="docker"' >> /home/${USER}/.bashrc \
     && echo 'alias pc="podman compose"' >> /home/${USER}/.bashrc \
     && echo 'alias podman-compose="podman compose"' >> /home/${USER}/.bashrc \
     && echo 'alias tf="tofu"' >> /home/${USER}/.bashrc \
-    && echo 'eval $(ssh-agent)' >> /home/${USER}/.bashrc \
     && echo 'export BROWSER=wslview' >> /home/${USER}/.bashrc \
     && echo 'export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock' >> /home/${USER}/.bashrc \
     && echo 'export ENABLE_LSP_TOOLS=1' >> /home/${USER}/.bashrc \
@@ -781,8 +820,8 @@ ARG BUILD_DATE
 
 # Ensure DNS is properly configured for network operations in this stage
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
-    && chmod 644 /etc/resolv.conf
+RUN { printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
+    && chmod 644 /etc/resolv.conf; } 2>/dev/null || true
 USER ${USER}
 
 # Disable Homebrew's auto-update and API mode during build to reduce network dependencies
@@ -791,7 +830,7 @@ ENV HOMEBREW_NO_INSTALL_FROM_API=1
 
 # Add Homebrew taps with DNS setup and retry logic for network resilience
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -799,13 +838,15 @@ RUN for attempt in 1 2 3; do \
       eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
       brew tap spring-io/tap && \
       brew tap tofuutils/tap && \
+      brew tap terraform-linters/tap && \
+      brew trust spring-io/tap tofuutils/tap terraform-linters/tap && \
       echo "Successfully added all taps" && \
       break || { echo "Failed attempt $attempt, retrying in 10 seconds..."; sleep 10; }; \
     done
 
 # Install development tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -825,7 +866,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install container tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -852,7 +893,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install security scanning tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -870,7 +911,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install infrastructure/terraform tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -881,7 +922,7 @@ RUN for attempt in 1 2 3; do \
       brew install terraform-docs && \
       brew install terraformer && \
       brew install terrascan && \
-      brew install tflint && \
+      brew install terraform-linters/tap/tflint && \
       brew install tfsec && \
       brew install tfupdate && \
       echo "Successfully installed all infrastructure tools" && \
@@ -890,7 +931,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install specialized tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -907,7 +948,7 @@ RUN for attempt in 1 2 3; do \
 
 # Upgrade all brew packages and configure tenv with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -1123,8 +1164,8 @@ RUN echo "" >> /home/${USER}/.bashrc \
     && echo '    if [ "$windows_user" != "Public" ] && [ "$windows_user" != "All Users" ] && [ -d "$windows_ssh_dir" ] && [ -n "$(ls -A "$windows_ssh_dir" 2>/dev/null)" ]; then' >> /home/${USER}/.bashrc \
     && echo '      mkdir -p /home/${USER}/.ssh' >> /home/${USER}/.bashrc \
     && echo '      cp "$windows_ssh_dir"/* /home/${USER}/.ssh/ 2>/dev/null' >> /home/${USER}/.bashrc \
-    && echo '      chmod +x /home/${USER}/.ssh/* 2>/dev/null' >> /home/${USER}/.bashrc \
-    && echo '      chmod 600 /home/${USER}/.ssh/* 2>/dev/null' >> /home/${USER}/.bashrc \
+    && echo '      find /home/${USER}/.ssh -type f -exec chmod 600 {} + 2>/dev/null' >> /home/${USER}/.bashrc \
+    && echo '      find /home/${USER}/.ssh -type d -exec chmod 700 {} + 2>/dev/null' >> /home/${USER}/.bashrc \
     && echo '      chown -R ${USER}:${GROUP} /home/${USER}/.ssh 2>/dev/null' >> /home/${USER}/.bashrc \
     && echo '      echo "SSH keys migrated from Windows user: $windows_user"' >> /home/${USER}/.bashrc \
     && echo '      break' >> /home/${USER}/.bashrc \
@@ -1208,6 +1249,13 @@ COPY config/home/dev/.asoundrc /home/${USER}/.asoundrc
 RUN chown -R ${USER}:${GROUP} /home/${USER}/.config/pulse \
     && chown ${USER}:${GROUP} /home/${USER}/.asoundrc
 
+# Audio is served by WSLg's PulseAudio server (/mnt/wslg/PulseServer); a local
+# daemon must never spawn. The pulseaudio package enables its user units by
+# preset, and the daemon's O_NOFOLLOW pidfile open collides with WSLg's
+# pre-seeded /run/user/1001/pulse/pid symlink -> ELOOP ("Too many levels of
+# symbolic links") -> crash-loop until start-limit. Mask the units for all users.
+RUN systemctl --global mask pulseaudio.service pulseaudio.socket
+
 # Add audio/video environment variables for WSLg
 RUN echo 'export CLUTTER_BACKEND=wayland' >> /home/${USER}/.bashrc \
     && echo 'export DISPLAY=:0' >> /home/${USER}/.bashrc \
@@ -1254,3 +1302,51 @@ USER ${USER}
 WORKDIR /home/${USER}
 
 ARG BUILD_DATE
+
+
+# ╔═══════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ STAGE 7: RUNNER                                                                                ║
+# ║ Purpose: GitHub Actions self-hosted runner image (tandem-built from the distro)               ║
+# ║ Contains: the actions/runner agent baked in, a JIT entrypoint; runs the agent (NOT systemd)   ║
+# ╚═══════════════════════════════════════════════════════════════════════════════════════════════╝
+
+FROM final AS runner
+
+# Pin the agent release and its OFFICIAL linux-x64 SHA-256 (from the actions/runner release notes).
+# Bump both together; the build fails fast on any checksum mismatch.
+ARG RUNNER_VERSION=2.335.1
+ARG RUNNER_SHA256=4ef2f25285f0ae4477f1fe1e346db76d2f3ebf03824e2ddd1973a2819bf6c8cf
+
+USER root
+
+# libicu is a .NET dependency already installed in the runtimes stage, so it is normally present.
+# This is a root-cause safety net: only install if it is genuinely missing, never blindly.
+# pipefail is set via SHELL in the base stage and inherited here; DL4006 is a cross-FROM false positive.
+# hadolint ignore=DL3008,DL4006
+RUN if ! ldconfig -p | grep -q 'libicu'; then \
+      echo "libicu missing — installing for the runner agent" \
+      && apt-get -y update \
+      && apt-get -y install --no-install-recommends libicu-dev \
+      && rm -rf /var/lib/apt/lists/*; \
+    else \
+      echo "libicu already present (provided by the .NET runtime); skipping install"; \
+    fi
+
+# Download, checksum-verify, and extract the agent into /opt/actions-runner; hand it to `dev`.
+WORKDIR /opt/actions-runner
+# hadolint ignore=DL4006
+RUN curl -fsSL -o runner.tar.gz \
+      "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+    && echo "${RUNNER_SHA256}  runner.tar.gz" | sha256sum -c - \
+    && tar xzf runner.tar.gz \
+    && rm runner.tar.gz \
+    && chown -R ${USER}:${GROUP} /opt/actions-runner
+
+# Baked JIT entrypoint (config lives under config/, per repo convention — not printf'd here).
+COPY --chown=${USER}:${GROUP} config/opt/actions-runner/entrypoint.sh /opt/actions-runner/entrypoint.sh
+RUN chmod +x /opt/actions-runner/entrypoint.sh
+
+# Run the agent as `dev`. PID 1 is the agent, NOT systemd: the units inherited from `final`
+# (clamonacc, wsl-vpnkit, make-root-shared) never start in an ephemeral CI container by design.
+USER ${USER}
+ENTRYPOINT ["/opt/actions-runner/entrypoint.sh"]

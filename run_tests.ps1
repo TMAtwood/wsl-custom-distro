@@ -9,7 +9,7 @@
     Image name should match what's built in build.ps1 or build-podman.sh
 
 .PARAMETER ImageName
-    The name of the container image to test. Defaults to localhost/tmatwood/ubuntu-24.04:latest
+    The name of the container image to test. Defaults to localhost/tmatwood/ubuntu-26.04:latest
 
 .PARAMETER ConfigFile
     The path to the test configuration file. Defaults to tests.yaml
@@ -18,10 +18,10 @@
     .\run_tests.ps1
 
 .EXAMPLE
-    .\run_tests.ps1 -ImageName localhost/tmatwood/ubuntu-24.04:0.1.0
+    .\run_tests.ps1 -ImageName localhost/tmatwood/ubuntu-26.04:0.1.0
 
 .EXAMPLE
-    $env:IMAGE_NAME = "localhost/tmatwood/ubuntu-24.04:0.1.0"
+    $env:IMAGE_NAME = "localhost/tmatwood/ubuntu-26.04:0.1.0"
     .\run_tests.ps1
 #>
 
@@ -30,12 +30,17 @@ param(
     [string]$ImageName = $env:IMAGE_NAME,
 
     [Parameter(Mandatory=$false)]
-    [string]$ConfigFile = "tests.yaml"
+    [string]$ConfigFile = $env:CONFIG_FILE
 )
 
 # Set default image name if not provided
 if ([string]::IsNullOrEmpty($ImageName)) {
-    $ImageName = "localhost/tmatwood/ubuntu-24.04:latest"
+    $ImageName = "localhost/tmatwood/ubuntu-26.04:latest"
+}
+
+# Set default config file if not provided
+if ([string]::IsNullOrEmpty($ConfigFile)) {
+    $ConfigFile = "tests.yaml"
 }
 
 Write-Host "Running Container Structure Tests..." -ForegroundColor Cyan

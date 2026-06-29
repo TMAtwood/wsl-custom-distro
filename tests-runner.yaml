@@ -1,0 +1,42 @@
+---
+schemaVersion: 2.0.0
+
+# Container-structure-test cases for the GitHub Actions RUNNER image
+# (localhost/tmatwood/ubuntu-26.04-runner). The distro image keeps tests.yaml.
+#
+# Run with:
+#   CONFIG_FILE=tests-runner.yaml \
+#   IMAGE_NAME=localhost/tmatwood/ubuntu-26.04-runner:current bash run_tests.sh
+
+metadataTest:
+  # The container runs the agent as its entrypoint, NOT systemd.
+  entrypoint: ["/opt/actions-runner/entrypoint.sh"]
+  workdir: "/opt/actions-runner"
+  user: "dev"
+
+fileExistenceTests:
+  - name: "runner agent run.sh present"
+    path: "/opt/actions-runner/run.sh"
+    shouldExist: true
+  - name: "runner agent config.sh present"
+    path: "/opt/actions-runner/config.sh"
+    shouldExist: true
+  - name: "runner listener binary present"
+    path: "/opt/actions-runner/bin/Runner.Listener"
+    shouldExist: true
+  - name: "JIT entrypoint present"
+    path: "/opt/actions-runner/entrypoint.sh"
+    shouldExist: true
+
+commandTests:
+  - name: "active user is dev"
+    command: "id"
+    args: ["-un"]
+    expectedOutput: ["dev"]
+  - name: "JIT entrypoint is executable"
+    command: "test"
+    args: ["-x", "/opt/actions-runner/entrypoint.sh"]
+  - name: "runner agent is owned by dev"
+    command: "stat"
+    args: ["-c", "%U", "/opt/actions-runner/run.sh"]
+    expectedOutput: ["dev"]

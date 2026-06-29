@@ -1,11 +1,11 @@
-# 🚀 Ultimate WSL2 Ubuntu 24.04 Development Environment
+# 🚀 Ultimate WSL2 Ubuntu 26.04 Development Environment
 
-[![Ubuntu 24.04](https://img.shields.io/badge/Ubuntu-24.04-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
+[![Ubuntu 26.04](https://img.shields.io/badge/Ubuntu-26.04-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
 [![WSL2](https://img.shields.io/badge/WSL-2-0078D4?logo=windows&logoColor=white)](https://docs.microsoft.com/en-us/windows/wsl/)
 [![Podman](https://img.shields.io/badge/Podman-Built-892CA0?logo=podman&logoColor=white)](https://podman.io/)
-[![License](https://img.shields.io/github/license/TMAtwood/wsl-ubuntu-24.04)](LICENSE)
+[![License](https://img.shields.io/github/license/TMAtwood/wsl-ubuntu-26.04)](LICENSE)
 
-> **The most comprehensive, production-ready WSL2 development environment** - A meticulously crafted Ubuntu 24.04 container image packed with 100+ pre-configured development tools, security scanners, and cloud utilities.
+> **The most comprehensive, production-ready WSL2 development environment** - A meticulously crafted Ubuntu 26.04 container image packed with 100+ pre-configured development tools, security scanners, and cloud utilities.
 
 ---
 
@@ -44,7 +44,7 @@ Whether you're a DevOps engineer, cloud architect, security researcher, or full-
 
 ### 🏗️ **Architecture Highlights**
 
-- **Base Image**: Ubuntu 24.04 LTS (Noble Numbat)
+- **Base Image**: Ubuntu 26.04 LTS (Resolute Raccoon)
 - **Container Runtime**: Podman (rootful) with Docker format support
 - **Shell**: Bash with pipefail for robust error handling
 - **Package Management**: apt, Homebrew/Linuxbrew, pip, npm, cargo, dotnet
@@ -247,8 +247,8 @@ Whether you're a DevOps engineer, cloud architect, security researcher, or full-
 1. **Clone the repository**:
 
     ```bash
-    git clone https://github.com/TMAtwood/wsl-ubuntu-24.04.git
-    cd wsl-ubuntu-24.04
+    git clone https://github.com/TMAtwood/wsl-ubuntu-26.04.git
+    cd wsl-ubuntu-26.04
     ```
 
 2. **Build the container image**:
@@ -280,7 +280,7 @@ Whether you're a DevOps engineer, cloud architect, security researcher, or full-
 4. **Start using your environment**:
 
     ```bash
-    wsl -d tmatwood-ubuntu-24.04
+    wsl -d tmatwood-ubuntu-26.04
     ```
 
 That's it! You now have a fully-configured development environment. 🎉
@@ -345,7 +345,7 @@ This runs the same build and test steps as the GitHub Actions CI/CD pipeline, in
 bash run_tests.sh
 
 # Test a specific image
-IMAGE_NAME=localhost/tmatwood/ubuntu-24.04:0.1.0 bash run_tests.sh
+IMAGE_NAME=localhost/tmatwood/ubuntu-26.04:0.1.0 bash run_tests.sh
 ```
 
 ### Test Categories
@@ -553,7 +553,7 @@ newgrp podman
 
 1. Ensure WSL2 is enabled: `wsl --set-default-version 2`
 2. Check available disk space
-3. Try unregistering old distro: `wsl --unregister tmatwood-ubuntu-24.04`
+3. Try unregistering old distro: `wsl --unregister tmatwood-ubuntu-26.04`
 
 </details>
 
@@ -583,7 +583,7 @@ systemctl status
 ### Getting Help
 
 - 📖 Check [TESTING.md](docs/TESTING.md) for test documentation
-- 🐛 [Open an issue](https://github.com/TMAtwood/wsl-ubuntu-24.04/issues)
+- 🐛 [Open an issue](https://github.com/TMAtwood/wsl-ubuntu-26.04/issues)
 - 💬 Review existing issues for solutions
 
 ---
@@ -674,7 +674,7 @@ This project is licensed under the [MIT License](LICENSE) - see the LICENSE file
 
 If this project saves you time, please consider giving it a ⭐!
 
-[![Star History Chart](https://api.star-history.com/svg?repos=TMAtwood/wsl-ubuntu-24.04&type=Date)](https://star-history.com/#TMAtwood/wsl-ubuntu-24.04&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=TMAtwood/wsl-ubuntu-26.04&type=Date)](https://star-history.com/#TMAtwood/wsl-ubuntu-26.04&Date)
 
 ---
 
@@ -682,6 +682,6 @@ If this project saves you time, please consider giving it a ⭐!
 
 **Built with ❤️ for the developer community**
 
-[Report Bug](https://github.com/TMAtwood/wsl-ubuntu-24.04/issues) · [Request Feature](https://github.com/TMAtwood/wsl-ubuntu-24.04/issues) · [Documentation](https://github.com/TMAtwood/wsl-ubuntu-24.04/wiki)
+[Report Bug](https://github.com/TMAtwood/wsl-ubuntu-26.04/issues) · [Request Feature](https://github.com/TMAtwood/wsl-ubuntu-26.04/issues) · [Documentation](https://github.com/TMAtwood/wsl-ubuntu-26.04/wiki)
 
 </div>

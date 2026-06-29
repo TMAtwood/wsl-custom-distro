@@ -38,6 +38,12 @@ commandTests:
     excludedOutput: ["(.*Inst.*Security.*)|(.*Security.*Inst.*)"]
     excludedError: ["(.*Inst.*Security.*)|(.*Security.*Inst.*)"]
 
+  # OS version
+  - name: "ubuntu 26.04"
+    command: "lsb_release"
+    args: ["-rs"]
+    expectedOutput: ["26.04"]
+
   # Version Control
   - name: "git installation"
     command: "git"
@@ -73,10 +79,34 @@ commandTests:
     command: "gcc"
     args: ["--version"]
     expectedOutput: ["gcc"]
+  - name: "gcc version 15"
+    command: "gcc"
+    args: ["-dumpversion"]
+    expectedOutput: ["15"]
   - name: "g++ installation"
     command: "g++"
     args: ["--version"]
     expectedOutput: ["g\\+\\+"]
+  - name: "clang installation"
+    command: "clang"
+    args: ["--version"]
+    expectedOutput: ["clang version"]
+  - name: "gdb installation"
+    command: "gdb"
+    args: ["--version"]
+    expectedOutput: ["GNU gdb"]
+  - name: "lldb installation"
+    command: "lldb"
+    args: ["--version"]
+    expectedOutput: ["lldb version"]
+  - name: "ninja installation"
+    command: "ninja"
+    args: ["--version"]
+    expectedOutput: [""]
+  - name: "valgrind installation"
+    command: "valgrind"
+    args: ["--version"]
+    expectedOutput: ["valgrind"]
   - name: "gawk installation"
     command: "gawk"
     args: ["--version"]
@@ -314,7 +344,7 @@ commandTests:
   - name: "infracost installation"
     command: "infracost"
     args: ["--version"]
-    expectedOutput: ["Infracost"]
+    expectedOutput: ["infracost version"]
   - name: "packer installation"
     command: "packer"
     args: ["version"]
@@ -673,7 +703,7 @@ commandTests:
     exitCode: 0
   - name: "nuget installation"
     command: "bash"
-    args: ["-c", "nuget help 2>&1 | head -1"]
+    args: ["-c", "dotnet nuget --help 2>&1 | head -1"]
     expectedOutput: ["NuGet"]
 
   # .NET Global Tools
@@ -803,7 +833,7 @@ commandTests:
   - name: "dig installation"
     command: "dig"
     args: ["-v"]
-    expectedError: ["DiG"]
+    expectedOutput: ["DiG"]
   - name: "nslookup installation"
     command: "nslookup"
     args: ["-version"]
@@ -820,6 +850,10 @@ commandTests:
     command: "ip"
     args: ["-Version"]
     expectedOutput: ["ip utility"]
+  - name: "nftables installation"
+    command: "nft"
+    args: ["--version"]
+    expectedOutput: ["nftables"]
   - name: "ping installation"
     command: "which"
     args: ["ping"]
@@ -932,10 +966,6 @@ commandTests:
     command: "which"
     args: ["vault"]
     expectedOutput: ["vault"]
-  - name: "blobfuse2 installation"
-    command: "blobfuse2"
-    args: ["version"]
-    expectedOutput: ["blobfuse2"]
   - name: "d2vm installation"
     command: "d2vm"
     args: ["version"]

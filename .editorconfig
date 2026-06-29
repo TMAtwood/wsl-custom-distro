@@ -4,3 +4,8 @@ end_of_line = lf
 indent_size = 2
 indent_style = space
 trim_trailing_whitespace = true
+
+# Markdown indentation is content-semantic (list-marker alignment, ASCII
+# diagrams), not a 2-space grid — don't enforce indent_size on it.
+[*.md]
+indent_size = unset

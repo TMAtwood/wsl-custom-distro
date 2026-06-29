@@ -1,8 +1,8 @@
-# WSL Ubuntu 24.04 Development Environment - Copilot Instructions
+# WSL Ubuntu 26.04 Development Environment - Copilot Instructions
 
 ## Project Overview
 
-This project builds a comprehensive Ubuntu 24.04 LTS container image for WSL2 with 100+ pre-configured development tools. It's a multi-language development environment (Python, Node.js, Go, Java, .NET, Rust) optimized for WSL2 with full systemd, GUI (WSLg), and rootful Podman support.
+This project builds a comprehensive Ubuntu 26.04 LTS container image for WSL2 with 100+ pre-configured development tools. It's a multi-language development environment (Python, Node.js, Go, Java, .NET, Rust) optimized for WSL2 with full systemd, GUI (WSLg), and rootful Podman support.
 
 ## Architecture: Multi-Stage Dockerfile
 
@@ -40,7 +40,7 @@ The 1082-line `Dockerfile` uses a **6-stage build** for optimal caching and sepa
 **Build System**:
 
 - Semantic versioning via GitVersion (GitFlow workflow - see `GitVersion.yml`)
-- Tags: `localhost/tmatwood/ubuntu-24.04:VERSION` and `localhost/tmatwood/ubuntu-24.04:latest`
+- Tags: `localhost/tmatwood/ubuntu-26.04:VERSION` and `localhost/tmatwood/ubuntu-26.04:latest`
 - Uses Podman (not Docker) with `--format docker` for compatibility
 
 ### Local Test
@@ -56,7 +56,7 @@ The 1082-line `Dockerfile` uses a **6-stage build** for optimal caching and sepa
 **Test Configuration** (`tests.yaml`):
 
 - GUI apps (firefox, vlc, obs, pavucontrol) use `which` instead of `--version` (they require X11/Wayland)
-- Ubuntu 24.04 Firefox is a snap transitional package - test with `which` only
+- Ubuntu 26.04 Firefox is a snap transitional package - test with `which` only
 - VLC output is "VLC version" not "VLC media player"
 
 ### CI/CD Pipeline

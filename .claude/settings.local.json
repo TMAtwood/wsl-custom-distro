@@ -43,7 +43,19 @@
       "Bash(timeout 120 bash -c 'cd /c/Users/ThomasMAtwood/repos/wsl-custom-distro && pre-commit run check-executables-have-shebangs --all-files 2>&1':*)",
       "Bash(./build.sh:*)",
       "Bash(python3:*)",
-      "Bash(SKIP=trufflehog pre-commit run:*)"
+      "Bash(SKIP=trufflehog pre-commit run:*)",
+      "WebFetch(domain:launchpad.net)",
+      "PowerShell(podman images *)",
+      "PowerShell(podman run *)",
+      "mcp__claude_ai_Atlassian_Rovo__getAccessibleAtlassianResources",
+      "mcp__claude_ai_Atlassian_Rovo__getVisibleJiraProjects",
+      "mcp__claude_ai_Atlassian_Rovo__createJiraIssue",
+      "Bash(wsl.exe -l -v)",
+      "Bash(iconv -f UTF-16LE -t UTF-8)",
+      "Bash(wsl.exe -d tmatwood-ubuntu-26.04 -u root --cd / -- systemctl status user@1001.service --no-pager)",
+      "Bash(wsl.exe -d tmatwood-ubuntu-26.04 -u root --cd / -- journalctl -u user@1001.service --no-pager -n 60)",
+      "Bash(grep -nA3 \"no-commit-to-branch\" .pre-commit-config.yaml)",
+      "Bash(wsl.exe *)"
     ],
     "deny": [],
     "ask": []

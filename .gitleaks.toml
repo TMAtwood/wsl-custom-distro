@@ -1,7 +1,7 @@
 # Gitleaks configuration
 # https://github.com/gitleaks/gitleaks
 
-title = "Gitleaks configuration for wsl-ubuntu-24.04"
+title = "Gitleaks configuration for wsl-ubuntu-26.04"
 
 [extend]
 # Use the default gitleaks config as a base

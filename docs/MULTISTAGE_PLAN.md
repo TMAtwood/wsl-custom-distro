@@ -343,7 +343,7 @@ FROM final AS full
     ```
 
 2. **Create Stage 1: Base Foundation**
-    - Lines 1-226 with `FROM ubuntu:24.04 AS base`
+    - Lines 1-226 with `FROM ubuntu:26.04 AS base`
 
 3. **Create Stage 2: Build Tools**
     - `FROM base AS build-tools`
