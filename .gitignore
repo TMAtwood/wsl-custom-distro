@@ -219,3 +219,22 @@ __marimo__/
 
 # Node modules
 node_modules/
+
+# Terraform / OpenTofu (infra/) — never commit state or real tfvars (they hold secrets)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# Self-hosted runner secrets — the fine-grained PAT lives only on the host, never in git
+**/fcg-runner/pat
+*.pat

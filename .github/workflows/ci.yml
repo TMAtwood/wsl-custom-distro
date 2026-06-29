@@ -2,8 +2,9 @@ name: Build and Test Container Image
 
 "on":
   push:
+    # Push to main is handled by build-image.yml (self-hosted build + GHCR publish).
+    # CI checks run on push for feature branches and develop only.
     branches:
-      - main
       - develop
       - "feature/**"
   pull_request:

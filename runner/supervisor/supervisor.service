@@ -1,0 +1,72 @@
+[Unit]
+Description=FCG Self-Hosted Ephemeral Runner Supervisor
+Documentation=file:///opt/fcg-runner/README.md
+# Require the rootful Podman socket before starting; podman.socket activates
+# the engine on first use via systemd socket activation.
+After=network-online.target podman.socket
+Wants=network-online.target podman.socket
+
+[Service]
+Type=simple
+User=svc-runner
+
+# supervisor.sh lives in /opt/fcg-runner, installed by runner/host/10-bootstrap-host.sh.
+ExecStart=/opt/fcg-runner/supervisor.sh
+
+# Always restart on any exit (crash, OOM, unexpected clean exit).
+Restart=always
+RestartSec=10
+
+# Graceful stop: send SIGTERM and give the in-flight job time to complete.
+# supervisor.sh traps SIGTERM, signals the podman child, and waits for exit.
+# 300 s matches a reasonable job upper bound; increase if builds take longer.
+TimeoutStopSec=300
+
+# Kill only the supervisor process, not its process group, so podman can
+# finish the in-flight container on SIGTERM before the unit is forcibly killed.
+KillMode=process
+KillSignal=SIGTERM
+
+# Environment
+# HOME is needed by podman for its config/auth lookup (~/.config/containers/).
+Environment=HOME=/home/svc-runner
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# Route all podman calls from supervisor.sh through the rootful engine socket.
+# svc-runner must be in the socket's owning group (set by 10-bootstrap-host.sh).
+Environment=CONTAINER_HOST=unix:///run/podman/podman.sock
+
+# Logging — all stdout/stderr goes to the journal; query with:
+#   journalctl -u fcg-supervisor -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fcg-supervisor
+
+# ---------------------------------------------------------------------------
+# Security hardening
+# ---------------------------------------------------------------------------
+# Prevent the supervisor process from gaining new privileges via SUID/SGID.
+# Does NOT restrict podman itself — podman runs via the root-owned socket.
+NoNewPrivileges=yes
+
+# Protect the OS tree from writes by this unit. The supervisor only writes to
+# STATE_DIR (/var/lib/fcg-runner) and /tmp; everything else is read-only.
+ProtectSystem=strict
+ReadWritePaths=/var/lib/fcg-runner /tmp
+
+# /home is read-only: the supervisor reads ~/.config/containers for podman auth
+# but must not modify home directories.
+ProtectHome=read-only
+
+# Do NOT enable PrivateTmp=yes — podman may use the real /tmp for layer
+# extraction and the shared namespace is required for socket path visibility.
+PrivateTmp=no
+
+# Prevent the unit from loading kernel modules.
+ProtectKernelModules=yes
+
+# Prevent /proc and /sys visibility beyond what the process needs.
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

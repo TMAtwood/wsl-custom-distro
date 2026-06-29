@@ -1,0 +1,121 @@
+name: Build, Test, and Publish Container Image
+
+"on":
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+# One build at a time — never queue two 35 GB builds against the same host
+# cache. cancel-in-progress: false so a running build is never interrupted.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  # Runs on the self-hosted WSL Podman host (image-build mode). Builds both
+  # Dockerfile targets (final + runner) via the persistent host engine socket
+  # for warm cache reuse, runs container-structure-tests, then pushes both
+  # images to GHCR. Gated by SELF_HOSTED_AVAILABLE so the workflow stays
+  # green (skipped, not queued) when the runner is offline.
+  #
+  # Enable once the self-hosted runner is deployed:
+  #   gh variable set SELF_HOSTED_AVAILABLE --body true
+  #
+  # See docs/RUNNER.md for bootstrap and operations; docs/runner-handoff.md §9
+  # for the design rationale (socket-access, leapfrog build, warm cache).
+  build-and-publish:
+    if: ${{ vars.SELF_HOSTED_AVAILABLE == 'true' }}
+    runs-on: [self-hosted, fcg-local, wsl-build]
+    timeout-minutes: 120  # 35 GB cold build ~20-30 min; allows retries + push headroom
+
+    env:
+      # Route all podman calls to the rootful host engine over the socket.
+      # The supervisor mounts /run/podman/podman.sock for image-build jobs only;
+      # run-mode jobs receive no socket mount.
+      CONTAINER_HOST: unix:///run/podman/podman.sock
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for GitVersion (build.sh calls it)
+
+      - name: Verify Podman remote engine
+        run: podman info  # Confirms host socket is mounted and engine is healthy
+
+      - name: Resolve build version
+        id: version
+        run: |
+          # GitVersion is baked into the runner image (dev-tools stage).
+          # Falls back to 0.0.0-dev if unavailable (should not happen on main).
+          ver=$(gitversion 2>/dev/null | jq -r .SemVer 2>/dev/null || echo "0.0.0-dev")
+          echo "ver=${ver}" >> "$GITHUB_OUTPUT"
+          echo "Build version: ${ver}"
+
+      - name: Build images (distro + runner, warm host cache)
+        run: bash build.sh  # Builds --target final and --target runner via host engine
+
+      - name: Test distro image
+        run: bash run_tests.sh  # tests.yaml
+
+      - name: Test runner image
+        env:
+          CONFIG_FILE: tests-runner.yaml
+          IMAGE_NAME: localhost/tmatwood/ubuntu-26.04-runner:current
+        run: bash run_tests.sh  # tests-runner.yaml
+
+      - name: Log in to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: echo "${GITHUB_TOKEN}" | podman login ghcr.io --username "${GHCR_USER}" --password-stdin
+
+      - name: Tag and push distro image to GHCR
+        env:
+          VER: ${{ steps.version.outputs.ver }}
+        run: |
+          LOCAL="localhost/tmatwood/ubuntu-26.04"
+          REMOTE="ghcr.io/tmatwood/ubuntu-26.04"
+          podman tag "${LOCAL}:${VER}" "${REMOTE}:${VER}"
+          podman tag "${LOCAL}:${VER}" "${REMOTE}:current"
+          podman push "${REMOTE}:${VER}"
+          podman push "${REMOTE}:current"
+
+      - name: Tag and push runner image to GHCR
+        env:
+          VER: ${{ steps.version.outputs.ver }}
+        run: |
+          LOCAL="localhost/tmatwood/ubuntu-26.04-runner"
+          REMOTE="ghcr.io/tmatwood/ubuntu-26.04-runner"
+          podman tag "${LOCAL}:${VER}" "${REMOTE}:${VER}"
+          podman tag "${LOCAL}:${VER}" "${REMOTE}:current"
+          podman push "${REMOTE}:${VER}"
+          podman push "${REMOTE}:current"
+
+  # Always-green status gate. Green when the build ran and passed (success) or
+  # when the runner is offline and the job was skipped. Red only on actual
+  # failure or cancellation.
+  publish-status:
+    if: ${{ always() }}
+    needs: [build-and-publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report publish status
+        run: |
+          result='${{ needs.build-and-publish.result }}'
+          echo "build-and-publish result: ${result}"
+          if [ "${result}" = "failure" ] || [ "${result}" = "cancelled" ]; then
+            echo "::error::Self-hosted build-and-publish did not pass (${result})."
+            exit 1
+          fi
+          if [ "${result}" = "skipped" ]; then
+            echo "Self-hosted runner unavailable (SELF_HOSTED_AVAILABLE != 'true')."
+            echo "Build and publish skipped — defaulting to green."
+          else
+            echo "Self-hosted build-and-publish passed."
+          fi
