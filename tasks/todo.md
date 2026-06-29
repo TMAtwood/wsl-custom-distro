@@ -196,3 +196,35 @@ done over still-red CI by design.
 - [x] `.\build.ps1` — both images rebuilt green (full ~32.6 min rebuild; image IDs `fd8343258a8c` /
       `abf7cd3c65ca`).
 - [x] `tests.yaml` **245/245** + `tests-runner.yaml` **8/8** re-confirmed after the fix.
+
+---
+
+## Follow-up: point CI `build-and-test` at the self-hosted runner (green-by-default)
+
+The hosted-CI disk ceiling can't be worked around, so `ci.yml` is retargeted to the self-hosted
+WSL Podman host, with a safe default-green path until that runner exists.
+
+### Changes
+
+- [x] `.github/workflows/ci.yml` — `build-and-test` now `runs-on: [self-hosted, fcg-local, wsl-build]`,
+      gated `if: ${{ vars.SELF_HOSTED_AVAILABLE == 'true' }}`. A naive self-hosted switch would leave
+      the job **queued → failed**; the variable gate makes it **skipped** (a non-failing conclusion)
+      until the runner is deployed.
+- [x] New `ci-status` job (`if: always()`, `needs: build-and-test`, `ubuntu-latest`): inspects
+      `needs.build-and-test.result` — green when the build **passed** or was **skipped**, red only on
+      genuine **failure/cancelled**. Gives one deterministic check.
+- [x] Build/test steps switched from `docker buildx` to `bash build.sh` / `bash run_tests.sh`
+      (+ `tests-runner.yaml`) — the proven Podman path that works on the host. Dropped the dead GHCR
+      publish/artifact steps (relocated to the deferred `build-image.yml` per handoff §9).
+- [x] New `.github/actionlint.yaml` declares the custom runner labels `fcg-local` / `wsl-build` so
+      actionlint recognizes them (root-cause, not a suppression).
+
+### Enable when the runner is live
+
+`gh variable set SELF_HOSTED_AVAILABLE --body true`
+
+### Verification
+
+- [x] `actionlint` (pre-commit) — **Passed**. `yamllint` (`.yamllint.yaml`) — **CLEAN**.
+- [ ] Live self-hosted run — deferred until the runner host is deployed (the job is intentionally
+      skipped until then; current runs go green via `ci-status`).

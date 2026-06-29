@@ -1,0 +1,8 @@
+# actionlint configuration.
+# Declare the custom labels of our self-hosted WSL Podman runner so actionlint
+# recognizes `runs-on: [self-hosted, fcg-local, wsl-build]` (see ci.yml and
+# docs/runner-handoff.md). Without this, actionlint flags the labels as unknown.
+self-hosted-runner:
+  labels:
+    - fcg-local
+    - wsl-build
