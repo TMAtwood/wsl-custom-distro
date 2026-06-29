@@ -150,7 +150,7 @@ RUN chmod +x /usr/local/bin/setup-git-config.sh
 # Backup existing resolv.conf and configure reliable DNS servers
 # hadolint ignore=DL3059
 RUN cp /etc/resolv.conf /etc/resolv.conf.backup 2>/dev/null || true && \
-    printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf
+    { printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf 2>/dev/null || true; }
 
 # Add PPAs with retry logic and network error handling
 # hadolint ignore=DL3059,SC2015
@@ -203,8 +203,8 @@ COPY config/etc/wsl.conf /etc/wsl.conf
 # Configure static DNS since generateResolvConf=false in wsl.conf
 # Using Cloudflare (1.1.1.1) and Google (8.8.8.8) public DNS servers
 # Note: resolv.conf will be protected by generateResolvConf=false in wsl.conf
-RUN printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
-    && chmod 644 /etc/resolv.conf
+RUN { printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
+    && chmod 644 /etc/resolv.conf; } 2>/dev/null || true
 
 # Create network fix script for WSL2/Tailscale compatibility
 # This script fixes both DNS and default route issues common with Tailscale VPN
@@ -820,8 +820,8 @@ ARG BUILD_DATE
 
 # Ensure DNS is properly configured for network operations in this stage
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
-    && chmod 644 /etc/resolv.conf
+RUN { printf "nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf \
+    && chmod 644 /etc/resolv.conf; } 2>/dev/null || true
 USER ${USER}
 
 # Disable Homebrew's auto-update and API mode during build to reduce network dependencies
@@ -830,7 +830,7 @@ ENV HOMEBREW_NO_INSTALL_FROM_API=1
 
 # Add Homebrew taps with DNS setup and retry logic for network resilience
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -846,7 +846,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install development tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -866,7 +866,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install container tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -893,7 +893,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install security scanning tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -911,7 +911,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install infrastructure/terraform tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -931,7 +931,7 @@ RUN for attempt in 1 2 3; do \
 
 # Install specialized tools with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \
@@ -948,7 +948,7 @@ RUN for attempt in 1 2 3; do \
 
 # Upgrade all brew packages and configure tenv with DNS setup and retry logic
 USER root
-RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+RUN printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
 USER ${USER}
 # hadolint ignore=SC2015
 RUN for attempt in 1 2 3; do \

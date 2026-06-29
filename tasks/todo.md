@@ -158,3 +158,41 @@ From a single `podman build`, produce both:
   is on GitHub Team/Enterprise — custom runner groups are unavailable before then.
 - Consider removing the superseded `docker-compose-github-runner.yml` / `.env.github-runner` once
   the new runner is proven.
+
+---
+
+## Follow-up fix: `/etc/resolv.conf` writes break Docker Buildx (CI red)
+
+**Found while preparing the merge of PR #3 to `main`.** CI (`build-and-test`, `ubuntu-latest`,
+`docker buildx build`) failed at `Dockerfile:152` with `/etc/resolv.conf: Read-only file system`.
+Root cause: Buildx bind-mounts `/etc/resolv.conf` **read-only** and supplies DNS via the daemon,
+whereas the local Podman build pins DNS with `--dns` flags **and** a writable `resolv.conf`. The
+Dockerfile overwrites `resolv.conf` in **10 places** (build-time DNS pinning before apt/PPA/brew),
+so the hard write fails the build under Buildx.
+
+### Fix (root cause, minimal blast radius)
+
+Made every `> /etc/resolv.conf` write **best-effort** — it still pins DNS where the file is writable
+(Podman build, WSL runtime) and silently no-ops where it is read-only (Buildx), since the builder
+already provides working DNS either way. Three patterns:
+
+- [x] 7× single-line two-server writes (brew stages): append `2>/dev/null || true`.
+- [x] 2× four-server write + `chmod 644` (lines ~206, ~823): wrap as `{ …; } 2>/dev/null || true`.
+- [x] 1× build-time backup+pin (line ~152): wrap the inner `printf` as `{ … 2>/dev/null || true; }`.
+- [x] `hadolint` clean at all edited lines (no new SC2015/parse findings; the `mv` restore at ~168
+      was already tolerant and left as-is).
+
+### Important caveat (surfaced to owner, who chose to fix anyway)
+
+This fix is **necessary but not sufficient** for green hosted CI: the image is ~36 GB and
+`ubuntu-latest` has no disk-freeing step or larger runner (`ci.yml`), so after `resolv.conf` the
+build still hits the hosted disk ceiling. Truly green CI requires the **deferred self-hosted runner**
+(point `build-and-test` at `runs-on: [self-hosted, …]`). `main` is **unprotected**, so the merge is
+done over still-red CI by design.
+
+### Verification
+
+- [x] `hadolint Dockerfile` — no new findings at edited lines.
+- [x] `.\build.ps1` — both images rebuilt green (full ~32.6 min rebuild; image IDs `fd8343258a8c` /
+      `abf7cd3c65ca`).
+- [x] `tests.yaml` **245/245** + `tests-runner.yaml` **8/8** re-confirmed after the fix.
