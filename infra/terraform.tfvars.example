@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars (which is git-ignored) and fill in real values.
+# NEVER commit a real token — gitleaks/trufflehog will catch it.
+
+github_owner              = "TMAtwood"
+github_token              = "github_pat_REPLACE_ME"
+runner_group_name         = "fcg-local"
+selected_repository_names = ["wsl-custom-distro"]
+
+# Custom runner groups require GitHub Team or Enterprise.
+# Leave false until the TMAtwood org is upgraded.
+enable_runner_group = false
